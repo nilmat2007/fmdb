@@ -14,28 +14,20 @@
   <!-- Favicon -->
   <link rel="icon" href="https://th.bing.com/th/id/OIG4.QbUR8N98pPSmXzzUykuK?dpr=3&pid=ImgDetMain" type="image/x-icon">
   
-  <style>
-    :root {
-      --primary-color: #00B900;
-      --secondary-color: #06C755;
-      --dark-color: #1E1E1E;
-      --light-color: #F8F9FA;
-      --gray-color: #6C757D;
-    }
-    
+  <style><style>
     body {
-      background-color: var(--light-color);
+      background-color: #F8F9FA; /* แทน var(--light-color) */
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: var(--dark-color);
+      color: #1E1E1E; /* แทน var(--dark-color) */
     }
     
     .line-theme {
-      background-color: var(--primary-color);
+      background-color: #00B900; /* แทน var(--primary-color) */
       color: white;
     }
     
     .line-theme:hover {
-      background-color: var(--secondary-color);
+      background-color: #06C755; /* แทน var(--secondary-color) */
       color: white;
     }
     
@@ -49,14 +41,14 @@
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
     }
     
-/*     .flex-preview {
+    .flex-preview {
       background-color: #849ebf;
       background-image: url('https://example.com/line-bg.jpg');
       background-size: cover;
       border-radius: 12px;
       min-height: 400px;
       overflow: auto;
-    } */
+    }
     
     .template-card {
       cursor: pointer;
@@ -93,7 +85,7 @@
     
     .nav-tabs .nav-link.active {
       font-weight: bold;
-      border-bottom: 3px solid var(--primary-color);
+      border-bottom: 3px solid #00B900; /* แทน var(--primary-color) */
     }
     
     @media (max-width: 768px) {
@@ -101,7 +93,7 @@
         flex-direction: column-reverse;
       }
     }
-  </style>
+</style>
 </head>
 
 <body>
@@ -224,7 +216,7 @@
               <h5 class="m-0"><i class="bi bi-phone"></i> ตัวอย่าง Flex Message</h5>
             </div>
             <div class="card-body p-0">
-              <div id="flex-preview" style="background-color: #849ebf; background-image: url(./line\ bg.jpg); background-size: contain; overflow: auto; padding-top: 10px;">
+              <div id="flex-preview" class="flex-preview d-flex justify-content-center align-items-center">
                 <div class="text-center text-white p-4">
                   <i class="bi bi-layout-text-sidebar" style="font-size: 3rem;"></i>
                   <p class="mt-3 mb-0">พื้นที่แสดงตัวอย่าง Flex Message<br>จะปรากฏที่นี่</p>
