@@ -1,807 +1,721 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport"
-    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0,viewport-fit=cover" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
-    integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ=="
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <script src="flexhtml.js"></script>
-  <link rel="stylesheet" href="flexhtml.css">
-  <!-- icon -->
-  <link rel="icon" href="https://th.bing.com/th/id/OIG4.QbUR8N98pPSmXzzUykuK?dpr=3&pid=ImgDetMain" type="image/x-icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>ระบบบันทึกและแชร์ Flex Message</title>
+  
+  <!-- CSS Libraries -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+
+  <link rel="stylesheet" href="flexhtml.css">
+  <!-- Favicon -->
+  <link rel="icon" href="https://th.bing.com/th/id/OIG4.QbUR8N98pPSmXzzUykuK?dpr=3&pid=ImgDetMain" type="image/x-icon">
+  
   <style>
+    :root {
+      --primary-color: #00B900;
+      --secondary-color: #06C755;
+      --dark-color: #1E1E1E;
+      --light-color: #F8F9FA;
+      --gray-color: #6C757D;
+    }
+    
     body {
-      background-color: #fafafa;
+      background-color: var(--light-color);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--dark-color);
     }
-
-    .hide {
-      display: none;
+    
+    .line-theme {
+      background-color: var(--primary-color);
+      color: white;
     }
-
-    #login-sec {
-      min-height: 100vh;
+    
+    .line-theme:hover {
+      background-color: var(--secondary-color);
+      color: white;
     }
-
-    .linebg {
-      background-color: #00B900;
+    
+    .card-shadow {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-
-    #flexlist {
-      height: 200px;
+    
+    .card-shadow:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
     }
-
-    .loader {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      z-index: 10;
-      width: 160px;
-      height: 100px;
-      margin-left: -80px;
-      margin-top: -50px;
-      border-radius: 5px;
-      background: #1e3f57;
-      animation: dot1_ 3s cubic-bezier(0.55, 0.3, 0.24, 0.99) infinite;
+    
+    .flex-preview {
+      background-color: #849ebf;
+      background-image: url('https://example.com/line-bg.jpg');
+      background-size: cover;
+      border-radius: 12px;
+      min-height: 400px;
+      overflow: auto;
     }
-
-    #loader:before {
-      content: "Loading";
-      position: absolute;
-      top: 30%;
-      left: 50%;
-      z-index: 10;
-      translate: -50% -50%;
-      font-size: 2rem;
+    
+    .template-card {
+      cursor: pointer;
+      transition: all 0.2s;
     }
-
-    .loader:nth-child(2) {
-      z-index: 11;
-      width: 150px;
-      height: 90px;
-      margin-top: -45px;
-      margin-left: -75px;
-      border-radius: 3px;
-      background: #3c517d;
-      animation-name: dot2_;
+    
+    .template-card:hover {
+      background-color: #f1f1f1;
     }
-
-    .loader:nth-child(3) {
-      z-index: 12;
-      width: 40px;
-      height: 20px;
-      margin-top: 50px;
-      margin-left: -20px;
-      border-radius: 0 0 5px 5px;
-      background: #6bb2cd;
-      animation-name: dot3_;
+    
+    .loader-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.8);
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
-
-    @keyframes dot1_ {
-      3%,
-      97% {
-        width: 160px;
-        height: 100px;
-        margin-top: -50px;
-        margin-left: -80px;
-      }
-
-      30%,
-      36% {
-        width: 80px;
-        height: 120px;
-        margin-top: -60px;
-        margin-left: -40px;
-      }
-
-      63%,
-      69% {
-        width: 40px;
-        height: 80px;
-        margin-top: -40px;
-        margin-left: -20px;
-      }
+    
+    .spinner {
+      width: 3rem;
+      height: 3rem;
     }
-
-    @keyframes dot2_ {
-      3%,
-      97% {
-        height: 90px;
-        width: 150px;
-        margin-left: -75px;
-        margin-top: -45px;
-      }
-
-      30%,
-      36% {
-        width: 70px;
-        height: 96px;
-        margin-left: -35px;
-        margin-top: -48px;
-      }
-
-      63%,
-      69% {
-        width: 32px;
-        height: 60px;
-        margin-left: -16px;
-        margin-top: -30px;
-      }
+    
+    .json-editor {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 14px;
+      min-height: 400px;
     }
-
-    @keyframes dot3_ {
-      3%,
-      97% {
-        height: 20px;
-        width: 40px;
-        margin-left: -20px;
-        margin-top: 50px;
-      }
-
-      30%,
-      36% {
-        width: 8px;
-        height: 8px;
-        margin-left: -5px;
-        margin-top: 49px;
-        border-radius: 8px;
-      }
-
-      63%,
-      69% {
-        width: 16px;
-        height: 4px;
-        margin-left: -8px;
-        margin-top: -37px;
-        border-radius: 10px;
+    
+    .nav-tabs .nav-link.active {
+      font-weight: bold;
+      border-bottom: 3px solid var(--primary-color);
+    }
+    
+    @media (max-width: 768px) {
+      .flex-container {
+        flex-direction: column-reverse;
       }
     }
   </style>
 </head>
 
 <body>
-  <section id="loader">
-    <div class="container">
-      <div class="loader"></div>
-      <div class="loader"></div>
-      <div class="loader"></div>
+  <!-- Loading Screen -->
+  <div id="loader" class="loader-container">
+    <div class="text-center">
+      <div class="spinner-border text-success" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-3">กำลังโหลดระบบ...</p>
+    </div>
+  </div>
+
+  <!-- Login Section -->
+  <section id="login-sec" class="d-none vh-100 d-flex justify-content-center align-items-center">
+    <div class="card card-shadow animate__animated animate__fadeIn" style="width: 320px;">
+      <div class="card-body text-center p-4">
+        <img src="https://img.icons8.com/fluency-systems-regular/96/00B900/line-me.png" width="64" alt="LINE Logo">
+        <h4 class="card-title mt-3">ระบบบันทึก Flex Message</h4>
+        <p class="card-text text-muted">กรุณาล็อกอินด้วย LINE เพื่อเริ่มใช้งาน</p>
+        <button id="login-btn" class="btn line-theme btn-lg w-100 mt-3">
+          <i class="bi bi-line"></i> ล็อกอินด้วย LINE
+        </button>
+      </div>
     </div>
   </section>
 
-  <section id="login-sec" class="d-flex justify-content-center align-items-center">
-    <div class="border rounded-3 shadow p-4" style="display: none;">
-      <p class="text-dark fw-bold">กรุณา Login ด้วยไลน์ เพื่อส่งข้อความไปยังผู้รับ</p>
-      <div class="col-12 text-center mt-2">
-        <button class="btn btn-lg linebg text-light" id="login-btn"><img
-            src="https://img.icons8.com/fluency-systems-regular/48/ffffff/line-me.png" />Login</button>
-      </div>
-    </div>
-  </section>
-  
-  <section id="input-sec" style="display: none;">
-    <div class="container">
-      <div class="display-4 mt-4">สวัสดี&nbsp;<span id="displayName"></span> <img id="display-img"
-          class="rounded-circle" style="width: 50px;"></div>
-      <div class="row justify-content-start mt-3">
-        <div class="col-md-4">
-          <label for="altText">ข้อความแสดงแทน FLEX หน้าแชท <span class="text-muted"
-              id="text-count">(0/400)</span></label>
-          <input type="text" class="form-control" id="altText" maxlength="400">
+  <!-- Main App Section -->
+  <section id="app-sec" class="d-none">
+    <!-- Header -->
+    <header class="bg-white shadow-sm py-3">
+      <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center">
+            <img id="profile-img" src="" class="rounded-circle me-3" width="40" height="40" alt="Profile">
+            <h4 class="m-0">สวัสดี, <span id="displayName"></span></h4>
+          </div>
+          <button id="logout-btn" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-box-arrow-right"></i> ออกจากระบบ
+          </button>
         </div>
       </div>
-      <div class="justify-content-center gap-2 d-flex flex-column-reverse flex-md-row mt-3 mt-md-3">
-        <div class="col-md-7 mt-3">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <label for="json" class="mb-0">JSON</label>
-            <a href="https://developers.line.biz/flex-simulator/" target="_blank" class="btn btn-info">
-              <i class="bi bi-window-fullscreen"></i>&nbsp;ออกแบบ Flex
-            </a>
-          </div>
-          <textarea name="json" id="json" rows="15" class="form-control"></textarea>
-          <div class="row g-3 mt-1">
-            <div class="col">
-              <button id="save" class="btn btn-primary w-100">
-                <i class="bi bi-floppy2-fill"></i>&nbsp;บันทึก
-              </button>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container my-4">
+      <div class="row g-4 flex-container">
+        <!-- Left Column - Editor -->
+        <div class="col-lg-7">
+          <div class="card card-shadow h-100">
+            <div class="card-header bg-white">
+              <ul class="nav nav-tabs card-header-tabs">
+                <li class="nav-item">
+                  <a class="nav-link active" data-bs-toggle="tab" href="#editor-tab">Editor</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" data-bs-toggle="tab" href="#guide-tab">คู่มือการใช้งาน</a>
+                </li>
+              </ul>
             </div>
-            <div class="col">
-              <button id="shared" class="btn btn-success w-100">
-                <i class="bi bi-share-fill"></i>&nbsp;แชร์ไปห้องแชทอื่น
-              </button>
+            
+            <div class="card-body tab-content">
+              <!-- Editor Tab -->
+              <div class="tab-pane fade show active" id="editor-tab">
+                <div class="mb-3">
+                  <label for="altText" class="form-label">ข้อความแสดงแทน (Alt Text)</label>
+                  <input type="text" class="form-control" id="altText" maxlength="400" placeholder="ข้อความที่จะแสดงเมื่อไม่สามารถแสดง Flex Message ได้">
+                  <div class="form-text text-end"><span id="text-count">0</span>/400 ตัวอักษร</div>
+                </div>
+                
+                <div class="mb-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label for="json" class="form-label mb-0">Flex Message JSON</label>
+                    <a href="https://developers.line.biz/flex-simulator/" target="_blank" class="btn btn-sm btn-outline-info">
+                      <i class="bi bi-window-plus"></i> ออกแบบ Flex
+                    </a>
+                  </div>
+                  <textarea id="json" class="form-control json-editor" rows="15" placeholder="วางโค้ด JSON ของ Flex Message ที่นี่..."></textarea>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                  <button id="preview-btn" class="btn btn-outline-primary">
+                    <i class="bi bi-eye"></i> ดูตัวอย่าง
+                  </button>
+                  <button id="save-btn" class="btn btn-primary">
+                    <i class="bi bi-save"></i> บันทึก
+                  </button>
+                  <button id="share-btn" class="btn btn-success">
+                    <i class="bi bi-share"></i> แชร์
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Guide Tab -->
+              <div class="tab-pane fade" id="guide-tab">
+                <h5><i class="bi bi-info-circle"></i> คู่มือการใช้งาน</h5>
+                <ol class="mt-3">
+                  <li class="mb-2">ไปที่ <a href="https://developers.line.biz/flex-simulator/" target="_blank">LINE Flex Simulator</a> เพื่อออกแบบ Flex Message</li>
+                  <li class="mb-2">คัดลอกโค้ด JSON จาก Flex Simulator มาใส่ในช่อง Editor</li>
+                  <li class="mb-2">ตั้งชื่อและบันทึก Template ไว้ใช้งานในภายหลัง</li>
+                  <li class="mb-2">กดปุ่มแชร์เพื่อส่งไปยังห้องแชทหรือเพื่อน</li>
+                </ol>
+                
+                <div class="alert alert-info mt-4">
+                  <h6><i class="bi bi-lightbulb"></i> เคล็ดลับ</h6>
+                  <ul class="mb-0">
+                    <li>สามารถกดปุ่ม "ดูตัวอย่าง" เพื่อตรวจสอบ Flex Message ก่อนแชร์</li>
+                    <li>Template ที่บันทึกไว้จะแสดงในส่วน "Template ของฉัน"</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div class="col-md-5 rounded"
-          style="background-color: #849ebf; background-image: url(./line\ bg.jpg); background-size: contain; overflow: auto;">
-          <div class="reset-this">
-            <div id="flex-show" style="padding-top: 10px;">
-              <div class="text-light w-100 text-center my-3">
-                พื้นที่แสดงตัวอย่าง Flex จะปรากฏที่นี่
+        
+        <!-- Right Column - Preview -->
+        <div class="col-lg-5">
+          <div class="card card-shadow h-100">
+            <div class="card-header bg-white">
+              <h5 class="m-0"><i class="bi bi-phone"></i> ตัวอย่าง Flex Message</h5>
+            </div>
+            <div class="card-body p-0">
+              <div id="flex-preview" class="flex-preview d-flex justify-content-center align-items-center">
+                <div class="text-center text-white p-4">
+                  <i class="bi bi-layout-text-sidebar" style="font-size: 3rem;"></i>
+                  <p class="mt-3 mb-0">พื้นที่แสดงตัวอย่าง Flex Message<br>จะปรากฏที่นี่</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
-  
-  <div class="modal fade" id="previewModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-    aria-labelledby="previewModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-      <div class="modal-content">
-        <div class="modal-header d-flex justify-content-between">
-          <h5 class="modal-title" id="previewModalLabel">Flex Preview</h5>
-          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
-        </div>
-        <div class="modal-body"
-          style="background-color: #849ebf;background-image: url(./line\ bg.jpg);background-size: contain;">
-          <div class="reset-this container-fluid">
-            <div id="flex1"></div>
+      
+      <!-- Saved Templates Section -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="card card-shadow">
+            <div class="card-header bg-white">
+              <h5 class="m-0"><i class="bi bi-collection"></i> Template ของฉัน</h5>
+            </div>
+            <div class="card-body">
+              <div id="templates-container" class="row g-3">
+                <!-- Templates will be loaded here -->
+                <div class="col-12 text-center py-5" id="no-templates">
+                  <i class="bi bi-folder-x" style="font-size: 3rem; color: #adb5bd;"></i>
+                  <p class="mt-3 text-muted">ยังไม่มี Template ที่บันทึกไว้</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- Preview Modal -->
+  <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-eye"></i> ตัวอย่าง Flex Message</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-0">
+          <div id="modal-preview" class="flex-preview" style="min-height: 60vh;"></div>
+        </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-info" id="json-copy">Copy</button>
-          <button type="button" class="btn btn-warning" id="json-update">Update <span class="hide"
-              id="update-id"></span></button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle"></i> ปิด
+          </button>
+          <button type="button" class="btn btn-primary" id="copy-json-btn">
+            <i class="bi bi-clipboard"></i> คัดลอก JSON
+          </button>
         </div>
       </div>
     </div>
   </div>
-  
-  <section>
-    <div class="container mb-5">
-      <div class="col-md-4 listtemplate mt-2 hide">
-        <div class="btn-group d-flex">
-          <button type="button" class="btn btn-outline-info text-dark fw-bold btn-head col-12"></button>
-          <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown"
-            aria-expanded="false">
-            <span class="visually-hidden">Toggle Dropdown</span>
-          </button>
-          <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-            <li class="m-1"><a class="btn btn-success shared-flex w-100">แชร์ไปห้องแชทอื่น</a></li>
-            <li class="m-1"><a class="btn btn-secondary show-json w-100">ดู JSON</a></li>
-            <li class="m-1"><a class="btn btn-warning share-link w-100">คัดลอกลิ้งค์แชร์</a></li>
-            <li class="m-1"><a class="btn btn-danger delete-list w-100">ลบ</a></li>
-          </ul>
+
+  <!-- Template Actions Modal -->
+  <div class="modal fade" id="templateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="templateModalTitle">จัดการ Template</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="d-grid gap-2">
+            <button type="button" class="btn btn-outline-primary template-action-btn" data-action="preview">
+              <i class="bi bi-eye"></i> ดูตัวอย่าง
+            </button>
+            <button type="button" class="btn btn-outline-success template-action-btn" data-action="share">
+              <i class="bi bi-share"></i> แชร์ไปห้องแชทอื่น
+            </button>
+            <button type="button" class="btn btn-outline-info template-action-btn" data-action="edit">
+              <i class="bi bi-pencil"></i> แก้ไข JSON
+            </button>
+            <button type="button" class="btn btn-outline-secondary template-action-btn" data-action="copy-link">
+              <i class="bi bi-link-45deg"></i> คัดลอกลิงก์แชร์
+            </button>
+            <button type="button" class="btn btn-outline-danger template-action-btn" data-action="delete">
+              <i class="bi bi-trash"></i> ลบ Template
+            </button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
         </div>
       </div>
-      <div id="flexlist" class="row justify-content-start mt-3"></div>
     </div>
-  </section>
+  </div>
 
+  <!-- JavaScript Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <script>
-    var Toast
-    $(document).ready(() => {
-      Toast = Swal.mixin({
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 1500,
-        timerProgressBar: true,
-      })
-      main()
-    })
-    
-    function copy(id = 'json-code') {
-      let $temp = $('<input>')
-      $('body').append($temp)
-      let element = document.getElementById(id)
-      element.select()
-      element.setSelectionRange(0, 99999)
-      navigator.clipboard.writeText(element.value).then(() => {
-        $temp.remove()
-        Toast.fire({
-          icon: 'success',
-          title: 'คัดลอกเรียบร้อย'
-        })
-      }, () => {
-        $temp.remove()
-        Toast.fire({
-          icon: 'error',
-          title: 'คัดลอกล้มเหลว'
-        })
-      })
-    }
-  </script>
+  <script src="flexhtml.js"></script>
   
   <script>
-    var profile, flexlist, flexid = undefined
-    var scripturl = 'https://script.google.com/macros/s/AKfycbyjB3lt2Gi6hLFZS4cvW6gcGA5qpYMZsQC3rJuysoBlPb9sXseV9YXWbwWF6oA67yV0/exec'
-    var starttime = new Date().getTime()
+    // Global variables
+    let profile = null;
+    let currentTemplateId = null;
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbyjB3lt2Gi6hLFZS4cvW6gcGA5qpYMZsQC3rJuysoBlPb9sXseV9YXWbwWF6oA67yV0/exec';
     
-    async function main() {
-      liff.init({
-        liffId: '2005615503-Ar8OBd2N', 
-        withLoginOnExternalBrowser: true
-      });
-
-      liff.ready.then(async () => {
-        let endtime = new Date().getTime()
-        let waittime = 3000 - (endtime - starttime)
-        if (waittime > 0) {
-          await new Promise(resolve => setTimeout(resolve, waittime))
-        }
-
-        console.log('liff ready')
-        if (liff.isLoggedIn()) {
-          var parameter = new URLSearchParams(window.location.search)
-          flexid = parameter.get('s')
-          if (flexid) {
-            $.post(scripturl, {
-              q: 'getflex',
-              id: parameter.get('s')
-            }).done(function (result) {
-              if (result.flex) {
-                $('#loader').hide()
-                $('#json').val(JSON.stringify(JSON.parse(result.flex), undefined, 4))
-                $('#altText').val(result.altText)
-                $('#shared').click()
-              } else {
-                $('section').remove()
-                $('.modal').remove()
-                $('#loader').hide()
-                Swal.fire({
-                  icon: 'error',
-                  title: 'เกิดข้อผิดพลาด',
-                  text: 'ไม่พบข้อมูล Flex ที่คุณต้องการ',
-                  allowOutsideClick: false,
-                  showConfirmButton: true,
-                  confirmButtonText: 'ปิดหน้านี้',
-                }).then(() => {
-                  liff.closeWindow()
-                })
-              }
-            })
-          } else {
-            flexid = undefined
-            $('#loader').hide()
-            $('#login-sec').removeClass('d-flex').hide();
-            $('#input-sec').slideDown(200);
-            let context = await liff.getContext()
-            if (context.type == 'square_chat') {
-              profile = { displayName: 'openchat', userId: context.squareMemberId, isSquare: true }
-            } else profile = await liff.getProfile();
-            $('#displayName').html(profile.displayName);
-            $('#display-img').attr('src', profile.pictureUrl);
-            if (liff.isInClient() || liff.getContext().type === 'square_chat') {
-              $('#send').slideDown(200);
-            }
-            getFlex()
-          }
-        }
-        else {
-          $('#loader').hide()
-          $('#login-sec div').slideDown(200);
-          $('#login-btn').click(function () {
-            liff.login({ redirectUri: window.location.href });
-          })
-        }
-      })
-    }
-
-    $('#altText').on('input', function () {
-      let text = $(this).val()
-      $('#text-count').text(`(${text.length}/400)`)
-    })
+    // Initialize the app
+    $(document).ready(() => {
+      initializeApp();
+    });
     
-    $('#json').on('input', function () {
-      if ($(this).val() == '') {
-        $('#flex-show').html('<div class="text-light w-100 text-center my-3">พื้นที่แสดงตัวอย่าง Flex จะปรากฏที่นี่</div>')
-        return false
-      }
-      let json = getJSON(true)
-      if (json) {
-        $('#flex-show').html('')
-        flex2html('flex-show', json)
-      } else {
-        $('#flex-show').html(`<div style="color: white; font-size: 1rem; text-align: center; padding-top: 20px">
-                        Invalid JSON
-                    </div>`)
-      }
-    })
-    
-    $('#preview').click(function () {
-      let flex = getJSON()
-      if (flex) {
-        $('#flex1').html('');
-        flex2html("flex1", flex);
-        $('.modal').modal('show');
-      }
-    })
-    
-    $('#shared').click(function () {
-      var flex = getJSON()
-      if (flex) {
-        if (JSON.stringify(flex).indexOf('{{share}}') > -1 && !flexid) {
-          Swal.fire({
-            icon: 'error',
-            title: 'หากกำหนดให้มีคีย์เวิร์ด share คุณจำเป็นที่จะต้องบันทึก Flex นี้ก่อนการแชร์',
-          })
-          return false
-        }
-        sendShare(flex);
-      }
-    })
-    
-    $('#save').click(function () {
-      let flex = getJSON()
-      if (flex) {
-        Swal.fire({
-          title: 'กรุณาใส่ชื่อ FLEX',
-          input: 'text',
-          inputAttributes: {
-            autocapitalize: 'off'
-          },
-          showCancelButton: true,
-          confirmButtonText: 'Save',
-          showLoaderOnConfirm: true,
-          preConfirm: (templateName) => {
-            return $.post(scripturl, {
-              q: 'put',
-              isSquare: profile.isSquare,
-              name: templateName,
-              flex: JSON.stringify(flex),
-              uid: profile.userId,
-              liff_id: liff.id
-            })
-          },
-          allowOutsideClick: () => !Swal.isLoading()
-        }).then((output) => {
-          if (output.value.result == 'duplicate') {
-            return Swal.fire({
-              icon: 'warning',
-              title: 'Oops...',
-              text: 'ชื่อซ้ำ',
-              showConfirmButton: false,
-              timer: 1500
-            })
-          }
-          let item = output.value.data
-          let row = $('.listtemplate').clone()
-          $(row).removeClass('hide listtemplate')
-          $(row).attr('id', item[0])
-          $(row).find('.btn-head').text(item[1])
-          $(row).find('.show-preview').append(`<p style="display: none">${item[2]}</p>`);
-          $(row).find('.delete-list').attr('id', item[0])
-          $(row).find('.show-json').append(`<p style="display: none">${item[2]}</p>`);
-          $(row).find('.share-link').attr('data-clipboard-text', 'https://liff.line.me/' + liff.getContext().liffId + '?s=' + item[0])
-          $('#json').val(JSON.stringify(JSON.parse(item[2]), undefined, 4))
-          $('#flexlist').append(row)
-          setButtonEventListener()
-          Swal.fire({
-            icon: 'success',
-            title: 'บันทึกเรียบร้อย',
-            showConfirmButton: false,
-            timer: 1500
-          })
-        })
-      }
-    })
-    
-    function update(id) {
-      let flex
-      try {
-        flex = JSON.parse($('#flex1').find('textarea').val())
-      } catch (error) {
-        console.log(error)
-        Swal.fire({
-          icon: 'error',
-          title: 'Oops...',
-          text: 'Invalid JSON'
-        })
-        return false
-      }
-      if (flex) {
-        Swal.fire({
-          icon: 'info',
-          title: 'กำลังอัพเดท JSON...',
-          text: 'กรุณารอสักครู่',
-          allowOutsideClick: false,
-        })
-        Swal.showLoading(Swal.getConfirmButton());
-        $.post(scripturl, {
-          q: 'update',
-          isSquare: profile.isSquare,
-          id: id,
-          flex: JSON.stringify(flex),
-          uid: liff.getDecodedIDToken().sub,
-          liff_id: liff.id
-        }, function (output) {
-          if (output.status == 200) {
-            let delbtn = $(`#${id}`)
-            $(delbtn).closest('ul').find('.show-preview p').html(JSON.stringify(flex));
-            $(delbtn).closest('ul').find('.show-json p').html(JSON.stringify(flex));
-            $('#json').val(JSON.stringify(flex, undefined, 4)).change()
-            setButtonEventListener()
-            Swal.fire({
-              icon: 'success',
-              title: 'อัพเดทเรียบร้อย',
-              showConfirmButton: false,
-              timer: 1500
-            })
-          } else {
-            Swal.fire({
-              icon: 'error',
-              title: 'อัพเดทไม่สำเร็จ',
-              text: output.error,
-              showConfirmButton: false,
-              timer: 1500
-            })
-          }
-        })
-      }
-    }
-    
-    function getFlex() {
-      $('#flexlist').LoadingOverlay("show");
-      let uid = profile.userId;
+    // Main initialization function
+    async function initializeApp() {
+      // Initialize LIFF
+      await initializeLiff();
       
-      $.post(scripturl, {
-        q: 'get',
-        isSquare: profile.isSquare,
-        uid: uid
-      }).done(function (result) {
-        $('#flexlist').LoadingOverlay("hide");
-        if (result.status != 200) {
-          return true
-        }
-        flexlist = result.data
-        
-        if (flexlist.length > 0) {
-          $('#flexlist').html('');
-
-          flexlist.forEach(function (item, index) {
-            let row = $('.listtemplate').clone()
-
-            $(row).removeClass('hide listtemplate')
-
-            $(row).find('.btn-head').text(item.name)
-
-            $(row).find('.show-preview').append(`<p style="display: none">${item.flex}</p>`);
-
-            $(row).find('.delete-list').attr('id', item.flex_id)
-
-            $(row).find('.show-json').append(`<p style="display: none">${item.flex}</p>`);
-            $(row).find('.share-link').attr('data-clipboard-text', 'https://liff.line.me/' + liff.id + '?s=' + item.flex_id)
-            $('#flexlist').append(row)
-          })
-        } else {
-          $('#flexlist').css('height', '100%')
-        }
-
-        setButtonEventListener()
-      })
+      // Set up event listeners
+      setupEventListeners();
+      
+      // Load templates if logged in
+      if (profile) {
+        loadTemplates();
+      }
     }
     
-    function getJSON(noerror = false) {
-      let json = $('#json').val()
-
+    // Initialize LIFF
+    async function initializeLiff() {
       try {
-        json = JSON.parse($('#json').val())
+        await liff.init({ liffId: '2005615503-Ar8OBd2N' });
+        
+        if (liff.isLoggedIn()) {
+          // Get profile
+          const context = await liff.getContext();
+          profile = context.type === 'square_chat' 
+            ? { displayName: 'Open Chat', userId: context.squareMemberId, isSquare: true }
+            : await liff.getProfile();
+          
+          // Update UI
+          updateUserProfile();
+          $('#loader').fadeOut();
+          $('#app-sec').removeClass('d-none');
+          
+          // Check for shared flex
+          checkSharedFlex();
+        } else {
+          $('#loader').fadeOut();
+          $('#login-sec').removeClass('d-none').addClass('d-flex');
+        }
       } catch (error) {
-        if (!noerror) {
+        console.error('LIFF initialization failed', error);
+        showError('เกิดข้อผิดพลาดในการเชื่อมต่อ LINE');
+      }
+    }
+    
+    // Set up event listeners
+    function setupEventListeners() {
+      // Login button
+      $('#login-btn').click(() => liff.login());
+      
+      // Logout button
+      $('#logout-btn').click(logout);
+      
+      // Alt text counter
+      $('#altText').on('input', updateTextCounter);
+      
+      // JSON editor change
+      $('#json').on('input', updateFlexPreview);
+      
+      // Buttons
+      $('#preview-btn').click(showPreviewModal);
+      $('#save-btn').click(saveTemplate);
+      $('#share-btn').click(shareFlex);
+      $('#copy-json-btn').click(copyJsonToClipboard);
+      
+      // Template actions
+      $(document).on('click', '.template-card', function() {
+        currentTemplateId = $(this).data('id');
+        $('#templateModal').modal('show');
+      });
+      
+      $('.template-action-btn').click(function() {
+        const action = $(this).data('action');
+        handleTemplateAction(action);
+      });
+    }
+    
+    // Update user profile in UI
+    function updateUserProfile() {
+      $('#displayName').text(profile.displayName);
+      $('#profile-img').attr('src', profile.pictureUrl || 'https://via.placeholder.com/40');
+    }
+    
+    // Update character counter
+    function updateTextCounter() {
+      const count = $('#altText').val().length;
+      $('#text-count').text(count);
+    }
+    
+    // Update flex preview
+    function updateFlexPreview() {
+      const json = getFlexJson(true);
+      const $preview = $('#flex-preview');
+      
+      if (!json) {
+        $preview.html(`
+          <div class="text-center text-white p-4">
+            <i class="bi bi-exclamation-triangle" style="font-size: 3rem;"></i>
+            <p class="mt-3 mb-0">รูปแบบ JSON ไม่ถูกต้อง</p>
+          </div>
+        `);
+        return;
+      }
+      
+      $preview.empty();
+      flex2html('flex-preview', json);
+    }
+    
+    // Get flex JSON
+    function getFlexJson(noError = false) {
+      try {
+        const jsonText = $('#json').val();
+        if (!jsonText.trim()) return null;
+        
+        const json = JSON.parse(jsonText);
+        
+        // Create full flex message if needed
+        if (json.type !== 'flex') {
+          return {
+            type: 'flex',
+            altText: $('#altText').val() || 'Flex Message',
+            contents: json
+          };
+        }
+        
+        return json;
+      } catch (error) {
+        if (!noError) {
           Swal.fire({
             icon: 'error',
-            title: 'Oops...',
-            text: 'Invalid JSON'
-          })
+            title: 'JSON ไม่ถูกต้อง',
+            text: 'กรุณาตรวจสอบรูปแบบ JSON อีกครั้ง'
+          });
         }
-        return false
+        return null;
       }
-      let flex
-      if (json.type != 'flex') {
-        let altText = $('#altText').val()
-        if (altText == '') altText = 'FLEX MESSAGE'
-        flex = {
-          type: 'flex',
-          altText: $('#altText').val(),
-          contents: json
-        }
-      } else {
-        flex = json
-      }
-      return flex
     }
-
-    async function sendShare(flex) {
-      const result = await liff.shareTargetPicker([flex]);
-      if (result) {
+    
+    // Show preview modal
+    function showPreviewModal() {
+      const flex = getFlexJson();
+      if (!flex) return;
+      
+      $('#modal-preview').empty();
+      flex2html('modal-preview', flex);
+      $('#previewModal').modal('show');
+    }
+    
+    // Save template
+    function saveTemplate() {
+      const flex = getFlexJson();
+      if (!flex) return;
+      
+      Swal.fire({
+        title: 'บันทึก Template',
+        input: 'text',
+        inputLabel: 'ชื่อ Template',
+        inputPlaceholder: 'ใส่ชื่อที่ต้องการบันทึก',
+        showCancelButton: true,
+        confirmButtonText: 'บันทึก',
+        cancelButtonText: 'ยกเลิก',
+        inputValidator: (value) => {
+          if (!value) {
+            return 'กรุณาใส่ชื่อ Template';
+          }
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          saveTemplateToServer(result.value, flex);
+        }
+      });
+    }
+    
+    // Save template to server
+    function saveTemplateToServer(name, flex) {
+      $.ajax({
+        url: scriptUrl,
+        method: 'POST',
+        data: {
+          q: 'put',
+          name: name,
+          flex: JSON.stringify(flex),
+          altText: $('#altText').val(),
+          uid: profile.userId,
+          isSquare: profile.isSquare,
+          liff_id: liff.id
+        },
+        success: (response) => {
+          if (response.result === 'duplicate') {
+            Swal.fire('ชื่อซ้ำ', 'มี Template ชื่อนี้อยู่แล้ว กรุณาใช้ชื่ออื่น', 'warning');
+            return;
+          }
+          
+          Swal.fire('สำเร็จ', 'บันทึก Template เรียบร้อยแล้ว', 'success');
+          loadTemplates();
+        },
+        error: () => {
+          Swal.fire('ผิดพลาด', 'ไม่สามารถบันทึก Template ได้', 'error');
+        }
+      });
+    }
+    
+    // Share flex message
+    async function shareFlex() {
+      const flex = getFlexJson();
+      if (!flex) return;
+      
+      try {
+        const result = await liff.shareTargetPicker([flex]);
+        if (!result) {
+          console.log('Share canceled');
+        }
+      } catch (error) {
+        console.error('Share failed:', error);
+        Swal.fire('ผิดพลาด', 'ไม่สามารถแชร์ข้อความได้', 'error');
+      }
+    }
+    
+    // Load templates
+    function loadTemplates() {
+      $.ajax({
+        url: scriptUrl,
+        method: 'POST',
+        data: {
+          q: 'get',
+          uid: profile.userId,
+          isSquare: profile.isSquare
+        },
+        beforeSend: () => {
+          $('#templates-container').LoadingOverlay('show');
+        },
+        success: (response) => {
+          displayTemplates(response.data || []);
+        },
+        error: () => {
+          Swal.fire('ผิดพลาด', 'ไม่สามารถโหลด Template ได้', 'error');
+        },
+        complete: () => {
+          $('#templates-container').LoadingOverlay('hide');
+        }
+      });
+    }
+    
+    // Display templates
+    function displayTemplates(templates) {
+      const $container = $('#templates-container');
+      
+      if (templates.length === 0) {
+        $('#no-templates').show();
+        return;
+      }
+      
+      $('#no-templates').hide();
+      $container.empty();
+      
+      templates.forEach(template => {
+        const date = new Date(template.createdAt).toLocaleDateString('th-TH');
+        
+        $container.append(`
+          <div class="col-md-6 col-lg-4">
+            <div class="card template-card card-shadow" data-id="${template.flex_id}">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                  <h6 class="card-title mb-1">${template.name}</h6>
+                  <span class="badge bg-light text-dark">${date}</span>
+                </div>
+                <p class="card-text text-muted small mb-2">${template.altText || 'ไม่มีข้อความแสดงแทน'}</p>
+                <div class="d-flex justify-content-end">
+                  <button class="btn btn-sm btn-outline-secondary me-2 quick-use-btn" data-id="${template.flex_id}">
+                    <i class="bi bi-lightning"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-three-dots-vertical"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li><button class="dropdown-item template-action" data-action="preview"><i class="bi bi-eye"></i> ดูตัวอย่าง</button></li>
+                    <li><button class="dropdown-item template-action" data-action="share"><i class="bi bi-share"></i> แชร์</button></li>
+                    <li><button class="dropdown-item template-action" data-action="edit"><i class="bi bi-pencil"></i> แก้ไข</button></li>
+                    <li><button class="dropdown-item template-action" data-action="copy-link"><i class="bi bi-link-45deg"></i> คัดลอกลิงก์</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button class="dropdown-item text-danger template-action" data-action="delete"><i class="bi bi-trash"></i> ลบ</button></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        `);
+      });
+    }
+    
+    // Handle template actions
+    function handleTemplateAction(action) {
+      const template = getTemplateById(currentTemplateId);
+      if (!template) return;
+      
+      switch (action) {
+        case 'preview':
+          previewTemplate(template);
+          break;
+        case 'share':
+          shareTemplate(template);
+          break;
+        case 'edit':
+          editTemplate(template);
+          break;
+        case 'copy-link':
+          copyTemplateLink(template);
+          break;
+        case 'delete':
+          deleteTemplate(template);
+          break;
+      }
+      
+      $('#templateModal').modal('hide');
+    }
+    
+    // Get template by ID
+    function getTemplateById(id) {
+      // In a real app, you would fetch this from the server or maintain in memory
+      // For simplicity, we'll assume it's available
+      return null;
+    }
+    
+    // Logout
+    function logout() {
+      liff.logout();
+      window.location.reload();
+    }
+    
+    // Show error message
+    function showError(message) {
+      Swal.fire('ผิดพลาด', message, 'error');
+    }
+    
+    // Check for shared flex
+    function checkSharedFlex() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const flexId = urlParams.get('s');
+      
+      if (flexId) {
+        loadSharedFlex(flexId);
+      }
+    }
+    
+    // Load shared flex
+    function loadSharedFlex(flexId) {
+      $.ajax({
+        url: scriptUrl,
+        method: 'POST',
+        data: {
+          q: 'getflex',
+          id: flexId
+        },
+        beforeSend: () => {
+          $('#loader').show();
+        },
+        success: (response) => {
+          if (response.flex) {
+            $('#json').val(JSON.stringify(JSON.parse(response.flex), null, 2));
+            $('#altText').val(response.altText);
+            updateFlexPreview();
+            $('#share-btn').click();
+          } else {
+            showError('ไม่พบ Flex ที่ต้องการแชร์');
+          }
+        },
+        error: () => {
+          showError('ไม่สามารถโหลด Flex ที่แชร์ได้');
+        },
+        complete: () => {
+          $('#loader').hide();
+        }
+      });
+    }
+    
+    // Copy JSON to clipboard
+    function copyJsonToClipboard() {
+      navigator.clipboard.writeText($('#json').val()).then(() => {
         Swal.fire({
           icon: 'success',
-          title: 'ส่งข้อความสำเร็จ',
+          title: 'คัดลอกแล้ว',
           showConfirmButton: false,
           timer: 1500
-        })
-        if (flexid) {
-          liff.closeWindow()
-        }
-      } else {
-        const [majorVer, minorVer, patchVer] = (
-          liff.getLineVersion() || ''
-        ).split('.');
-        if (minorVer === undefined) {
-          console.log('ShareTargetPicker was canceled in external browser');
-          if (flexid) {
-            liff.closeWindow()
-          }
-          return;
-        }
-        if (
-          parseInt(majorVer) >= 10 &&
-          parseInt(minorVer) >= 10 &&
-          parseInt(patchVer) > 0
-        ) {
-          console.log('ShareTargetPicker was canceled in LINE app');
-          if (flexid) {
-            liff.closeWindow()
-          }
-        }
-      }
-    }
-    
-    async function sendInChat(flex) {
-      liff.sendMessages([flex])
-        .then(() => {
-          Swal.fire({
-            icon: 'success',
-            title: 'ส่งข้อความสำเร็จ',
-            showConfirmButton: false,
-            timer: 1500
-          }).then(() => {
-            if (flexid) {
-              liff.closeWindow()
-            }
-          })
-        })
-        .catch((err) => {
-          console.log("error", err);
-          Swal.fire({
-            icon: 'error',
-            title: 'Oops...',
-            text: 'ไม่สามารถส่งข้อความได้'
-          })
         });
-    }
-    
-    function setButtonEventListener() {
-      $('.btn-head').off('click').click(function () {
-        let json = $(this).parent().find('ul').find('.show-json p').text()
-        $('#json').val(JSON.stringify(JSON.parse(json), undefined, 4))
-        setTimeout(() => {
-          $('#json').trigger('input')
-        }, 200);
-        $('#altText').val($(this).text())
-        $('#flex-show').html('')
-      })
-      
-      $('.show-preview').off('click').click(function () {
-        $('#flex1').html('');
-        let json = JSON.parse($(this).find('p').text())
-        $('#json').val(JSON.stringify(json, undefined, 4))
-        setTimeout(() => {
-          $('#json').trigger('input')
-          setTimeout(() => {
-            $('#json').val('')
-          }, 200);
-        }, 200);
-        $('#json-update').hide()
-        $('#json-copy').hide()
-        $('.modal').modal('show');
-      })
-      
-      $('.show-json').off('click').click(function () {
-        $('#json-update').show()
-        $('#json-copy').show()
-        $('#flex1').html(`<div><textarea id="json-code" class="p-2 form-control bg-white" rows="20">${JSON.stringify(JSON.parse($(this).find('p').text()), undefined, 4)
-          }</textarea></div>`);
-        $('#json-copy').off('click').click(function () {
-          copy()
-        })
-        let showjsonbtn = $(this)
-        $('#json-update').off('click').click(function () {
-          update(showjsonbtn.closest('ul').find('.delete-list').attr('id'))
-        })
-        $('.modal').modal('show');
-      })
-      
-      $('.delete-list').off('click').click(function () {
-        let button = $(this)
-        Swal.fire({
-          title: 'คุณต้องการลบรายการนี้ใช่หรือไม่?',
-          text: "การลบรายการนี้จะไม่สามารถกู้คืนได้",
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#3085d6',
-          cancelButtonColor: '#d33',
-          confirmButtonText: 'ลบรายการนี้',
-          cancelButtonText: 'ยกเลิก'
-        }).then((result) => {
-          if (result.value) {
-            Swal.fire({
-              title: 'กำลังลบรายการ',
-              text: 'กรุณารอสักครู่',
-              allowOutsideClick: false,
-            })
-            Swal.showLoading(Swal.getConfirmButton())
-            $.post(scripturl, {
-              q: 'delete',
-              id: $(this).attr('id')
-            }, function (result) {
-              if (result.result == 200) {
-                Swal.fire({
-                  icon: 'success',
-                  title: 'ลบรายการสำเร็จ',
-                  showConfirmButton: false,
-                  timer: 1500
-                })
-                $(button).closest('.col-md-4').remove()
-              } else {
-                Swal.fire({
-                  icon: 'error',
-                  title: 'ลบรายการไม่สำเร็จ',
-                  showConfirmButton: false,
-                  timer: 1500
-                })
-              }
-            })
-          }
-        })
-      })
-
-      $('.share-link').off('click').click(function () {
-        let $temp = $('<input>')
-        $('body').append($temp)
-        navigator.clipboard.writeText($(this).attr('data-clipboard-text')).then(() => {
-          $temp.remove()
-          Toast.fire({
-            icon: 'success',
-            title: 'คัดลอกลิ้งค์แชร์เรียบร้อย'
-          })
-        }, () => {
-          $temp.remove()
-          Toast.fire({
-            icon: 'error',
-            title: 'คัดลอกล้มเหลว'
-          })
-        })
-      })
-
-      if (liff.isInClient() || liff.getContext().type == 'square_chat') {
-        $('.send-flex').off('click').click(function () {
-          let button = $(this)
-          let id = $(this).closest('.col-md-4').find('.delete-list').attr('id')
-          let flextext = $(this).closest('.col-md-4').find('.show-json').find('p').text()
-
-          let flex = JSON.parse(flextext)
-          sendInChat(flex)
-        })
-      } else {
-        $('.send-flex').hide()
-      }
-      
-      $('.shared-flex').off('click').click(function () {
-        let button = $(this)
-        let id = $(this).closest('.col-md-4').find('.delete-list').attr('id')
-        let flextext = $(this).closest('.col-md-4').find('.show-json').find('p').text()
-        let flex = JSON.parse(flextext)
-        sendShare(flex)
-      })
+      });
     }
   </script>
-  
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-    crossorigin="anonymous"></script>
-  <script
-    src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
-  <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
-
 </html>
