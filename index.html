@@ -9,7 +9,6 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-
   <link rel="stylesheet" href="flexhtml.css">
   <!-- Favicon -->
   <link rel="icon" href="https://th.bing.com/th/id/OIG4.QbUR8N98pPSmXzzUykuK?dpr=3&pid=ImgDetMain" type="image/x-icon">
@@ -325,6 +324,7 @@
     // Global variables
     let profile = null;
     let currentTemplateId = null;
+    let templates = []; // Store templates locally
     const scriptUrl = 'https://script.google.com/macros/s/AKfycbyjB3lt2Gi6hLFZS4cvW6gcGA5qpYMZsQC3rJuysoBlPb9sXseV9YXWbwWF6oA67yV0/exec';
     
     // Initialize the app
@@ -404,6 +404,15 @@
       $('.template-action-btn').click(function() {
         const action = $(this).data('action');
         handleTemplateAction(action);
+      });
+
+      // Quick use button
+      $(document).on('click', '.quick-use-btn', function() {
+        const id = $(this).data('id');
+        const template = templates.find(t => t.flex_id === id);
+        if (template) {
+          shareTemplate(template);
+        }
       });
     }
     
@@ -515,19 +524,22 @@
           altText: $('#altText').val(),
           uid: profile.userId,
           isSquare: profile.isSquare,
-          liff_id: liff.id
+          liff_id: liff.getContext().liffId
         },
         success: (response) => {
           if (response.result === 'duplicate') {
             Swal.fire('ชื่อซ้ำ', 'มี Template ชื่อนี้อยู่แล้ว กรุณาใช้ชื่ออื่น', 'warning');
             return;
           }
-          
-          Swal.fire('สำเร็จ', 'บันทึก Template เรียบร้อยแล้ว', 'success');
-          loadTemplates();
+          if (response.status === 200) {
+            Swal.fire('สำเร็จ', 'บันทึก Template เรียบร้อยแล้ว', 'success');
+            loadTemplates();
+          } else {
+            showError('ไม่สามารถบันทึก Template ได้: ' + (response.error || 'Unknown error'));
+          }
         },
-        error: () => {
-          Swal.fire('ผิดพลาด', 'ไม่สามารถบันทึก Template ได้', 'error');
+        error: (xhr) => {
+          showError('ไม่สามารถบันทึก Template ได้: ' + (xhr.statusText || 'Server error'));
         }
       });
     }
@@ -544,7 +556,7 @@
         }
       } catch (error) {
         console.error('Share failed:', error);
-        Swal.fire('ผิดพลาด', 'ไม่สามารถแชร์ข้อความได้', 'error');
+        showError('ไม่สามารถแชร์ข้อความได้');
       }
     }
     
@@ -559,16 +571,21 @@
           isSquare: profile.isSquare
         },
         beforeSend: () => {
-          $('#templates-container').LoadingOverlay('show');
+          $('#templates-container').html('<div class="text-center py-5"><div class="spinner-border text-success"></div></div>');
         },
         success: (response) => {
-          displayTemplates(response.data || []);
+          if (response.status === 200) {
+            templates = response.data || [];
+            displayTemplates(templates);
+          } else {
+            showError('ไม่สามารถโหลด Template ได้: ' + (response.error || 'Unknown error'));
+          }
         },
-        error: () => {
-          Swal.fire('ผิดพลาด', 'ไม่สามารถโหลด Template ได้', 'error');
+        error: (xhr) => {
+          showError('ไม่สามารถโหลด Template ได้: ' + (xhr.statusText || 'Server error'));
         },
         complete: () => {
-          $('#templates-container').LoadingOverlay('hide');
+          $('#templates-container').find('.spinner-border').remove();
         }
       });
     }
@@ -579,11 +596,12 @@
       
       if (templates.length === 0) {
         $('#no-templates').show();
+        $container.find('.template-card').parent().remove();
         return;
       }
       
       $('#no-templates').hide();
-      $container.empty();
+      $container.find('.template-card').parent().remove();
       
       templates.forEach(template => {
         const date = new Date(template.createdAt).toLocaleDateString('th-TH');
@@ -605,12 +623,12 @@
                     <i class="bi bi-three-dots-vertical"></i>
                   </button>
                   <ul class="dropdown-menu dropdown-menu-end">
-                    <li><button class="dropdown-item template-action" data-action="preview"><i class="bi bi-eye"></i> ดูตัวอย่าง</button></li>
-                    <li><button class="dropdown-item template-action" data-action="share"><i class="bi bi-share"></i> แชร์</button></li>
-                    <li><button class="dropdown-item template-action" data-action="edit"><i class="bi bi-pencil"></i> แก้ไข</button></li>
-                    <li><button class="dropdown-item template-action" data-action="copy-link"><i class="bi bi-link-45deg"></i> คัดลอกลิงก์</button></li>
+                    <li><button class="dropdown-item template-action" data-action="preview" data-id="${template.flex_id}"><i class="bi bi-eye"></i> ดูตัวอย่าง</button></li>
+                    <li><button class="dropdown-item template-action" data-action="share" data-id="${template.flex_id}"><i class="bi bi-share"></i> แชร์</button></li>
+                    <li><button class="dropdown-item template-action" data-action="edit" data-id="${template.flex_id}"><i class="bi bi-pencil"></i> แก้ไข</button></li>
+                    <li><button class="dropdown-item template-action" data-action="copy-link" data-id="${template.flex_id}"><i class="bi bi-link-45deg"></i> คัดลอกลิงก์</button></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><button class="dropdown-item text-danger template-action" data-action="delete"><i class="bi bi-trash"></i> ลบ</button></li>
+                    <li><button class="dropdown-item text-danger template-action" data-action="delete" data-id="${template.flex_id}"><i class="bi bi-trash"></i> ลบ</button></li>
                   </ul>
                 </div>
               </div>
@@ -622,8 +640,11 @@
     
     // Handle template actions
     function handleTemplateAction(action) {
-      const template = getTemplateById(currentTemplateId);
-      if (!template) return;
+      const template = templates.find(t => t.flex_id === currentTemplateId);
+      if (!template) {
+        showError('ไม่พบ Template');
+        return;
+      }
       
       switch (action) {
         case 'preview':
@@ -646,11 +667,128 @@
       $('#templateModal').modal('hide');
     }
     
-    // Get template by ID
-    function getTemplateById(id) {
-      // In a real app, you would fetch this from the server or maintain in memory
-      // For simplicity, we'll assume it's available
-      return null;
+    // Preview template
+    function previewTemplate(template) {
+      try {
+        const flex = JSON.parse(template.flex);
+        $('#modal-preview').empty();
+        flex2html('modal-preview', flex);
+        $('#previewModal').modal('show');
+      } catch (error) {
+        showError('ไม่สามารถแสดงตัวอย่างได้: JSON ไม่ถูกต้อง');
+      }
+    }
+    
+    // Share template
+    async function shareTemplate(template) {
+      try {
+        const flex = JSON.parse(template.flex);
+        const result = await liff.shareTargetPicker([flex]);
+        if (!result) {
+          console.log('Share canceled');
+        }
+      } catch (error) {
+        console.error('Share failed:', error);
+        showError('ไม่สามารถแชร์ Template ได้');
+      }
+    }
+    
+    // Edit template
+    function editTemplate(template) {
+      $('#altText').val(template.altText);
+      $('#json').val(JSON.stringify(JSON.parse(template.flex), null, 2));
+      updateFlexPreview();
+      
+      Swal.fire({
+        title: 'แก้ไข Template',
+        input: 'text',
+        inputLabel: 'ชื่อ Template',
+        inputValue: template.name,
+        showCancelButton: true,
+        confirmButtonText: 'บันทึก',
+        cancelButtonText: 'ยกเลิก',
+        inputValidator: (value) => {
+          if (!value) {
+            return 'กรุณาใส่ชื่อ Template';
+          }
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const flex = getFlexJson();
+          if (!flex) return;
+          
+          $.ajax({
+            url: scriptUrl,
+            method: 'POST',
+            data: {
+              q: 'update',
+              id: template.flex_id,
+              flex: JSON.stringify(flex),
+              uid: profile.userId
+            },
+            success: (response) => {
+              if (response.status === 200) {
+                Swal.fire('สำเร็จ', 'อัปเดต Template เรียบร้อยแล้ว', 'success');
+                loadTemplates();
+              } else {
+                showError('ไม่สามารถอัปเดต Template ได้: ' + (response.error || 'Unknown error'));
+              }
+            },
+            error: (xhr) => {
+              showError('ไม่สามารถอัปเดต Template ได้: ' + (xhr.statusText || 'Server error'));
+            }
+          });
+        }
+      });
+    }
+    
+    // Copy template link
+    function copyTemplateLink(template) {
+      const url = `${window.location.origin}${window.location.pathname}?s=${template.flex_id}`;
+      navigator.clipboard.writeText(url).then(() => {
+        Swal.fire({
+          icon: 'success',
+          title: 'คัดลอกลิงก์แล้ว',
+          showConfirmButton: false,
+          timer: 1500
+        });
+      }).catch(() => {
+        showError('ไม่สามารถคัดลอกลิงก์ได้');
+      });
+    }
+    
+    // Delete template
+    function deleteTemplate(template) {
+      Swal.fire({
+        title: 'ยืนยันการลบ',
+        text: `คุณต้องการลบ Template "${template.name}" หรือไม่?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ลบ',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          $.ajax({
+            url: scriptUrl,
+            method: 'POST',
+            data: {
+              q: 'delete',
+              id: template.flex_id
+            },
+            success: (response) => {
+              if (response.status === 200) {
+                Swal.fire('สำเร็จ', 'ลบ Template เรียบร้อยแล้ว', 'success');
+                loadTemplates();
+              } else {
+                showError('ไม่สามารถลบ Template ได้: ' + (response.error || 'Unknown error'));
+              }
+            },
+            error: (xhr) => {
+              showError('ไม่สามารถลบ Template ได้: ' + (xhr.statusText || 'Server error'));
+            }
+          });
+        }
+      });
     }
     
     // Logout
@@ -661,7 +799,11 @@
     
     // Show error message
     function showError(message) {
-      Swal.fire('ผิดพลาด', message, 'error');
+      Swal.fire({
+        icon: 'error',
+        title: 'ผิดพลาด',
+        text: message
+      });
     }
     
     // Check for shared flex
@@ -687,17 +829,17 @@
           $('#loader').show();
         },
         success: (response) => {
-          if (response.flex) {
+          if (response.status === 200 && response.flex) {
             $('#json').val(JSON.stringify(JSON.parse(response.flex), null, 2));
             $('#altText').val(response.altText);
             updateFlexPreview();
             $('#share-btn').click();
           } else {
-            showError('ไม่พบ Flex ที่ต้องการแชร์');
+            showError('ไม่พบ Flex ที่ต้องการแชร์: ' + (response.error || 'Unknown error'));
           }
         },
-        error: () => {
-          showError('ไม่สามารถโหลด Flex ที่แชร์ได้');
+        error: (xhr) => {
+          showError('ไม่สามารถโหลด Flex ที่แชร์ได้: ' + (xhr.statusText || 'Server error'));
         },
         complete: () => {
           $('#loader').hide();
@@ -714,6 +856,8 @@
           showConfirmButton: false,
           timer: 1500
         });
+      }).catch(() => {
+        showError('ไม่สามารถคัดลอก JSON ได้');
       });
     }
   </script>
