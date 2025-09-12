@@ -1,523 +1,837 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flex Message Editor</title>
-  
-  <!-- CSS Libraries -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.tailwindcss.com/3.4.1" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
-  <link rel="stylesheet" href="flexhtml.css">
-  <!-- Favicon -->
-  <link rel="icon" href="https://th.bing.com/th/id/OIG4.QbUR8N98pPSmXzzUykuK?dpr=3&pid=ImgDetMain" type="image/x-icon">
-  
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f8f9fa;
-    }
-    .line-theme {
-      background-color: #00B900;
-      color: white;
-    }
-    .line-theme:hover {
-      background-color: #06C755;
-    }
-    .card-shadow {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      transition: transform 0.3s ease;
-    }
-    .card-shadow:hover {
-      transform: translateY(-5px);
-    }
-    .flex-preview {
-      background-color: #849ebf;
-      border-radius: 12px;
-      min-height: 400px;
-      overflow: auto;
-    }
-    .json-editor {
-      font-family: 'Courier New', monospace;
-      font-size: 14px;
-      min-height: 400px;
-    }
-    @media (max-width: 768px) {
-      .flex-container {
-        flex-direction: column-reverse;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=0, viewport-fit=cover">
+    <title>ระบบบันทึกและแชร์ Flex Message</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+        integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- Bootstrap JS (for modal, dropdowns) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+    <!-- SweetAlert2 -->
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- jQuery Loading Overlay -->
+    <script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
+    <!-- LINE LIFF SDK -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <!-- External Flex rendering scripts -->
+    <script src="flexhtml.js"></script>
+    <link rel="stylesheet" href="flexhtml.css">
+    <!-- Favicon -->
+    <link rel="icon" href="https://th.bing.com/th/id/OIG4.QbUR8N98pPSmXzzUykuK?dpr=3&pid=ImgDetMain" type="image/x-icon">
+    <!-- Google Fonts: Noto Sans Thai -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans Thai', sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card-shadow {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .flex-preview {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            min-height: 200px;
+        }
+        
+        .code-editor {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            background: #2d3748;
+            color: #e2e8f0;
+        }
+        
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #48bb78;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        .toast.error {
+            background: #f56565;
+        }
+        
+        .loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            z-index: 10;
+            width: 160px;
+            height: 100px;
+            margin-left: -80px;
+            margin-top: -50px;
+            border-radius: 5px;
+            background: #1e3f57;
+            animation: dot1_ 3s cubic-bezier(0.55, 0.3, 0.24, 0.99) infinite;
+        }
+        
+        .loader:before {
+            content: "Loading";
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            z-index: 10;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            color: white;
+        }
+        
+        .loader:nth-child(2) {
+            z-index: 11;
+            width: 150px;
+            height: 90px;
+            margin-top: -45px;
+            margin-left: -75px;
+            border-radius: 3px;
+            background: #3c517d;
+            animation-name: dot2_;
+        }
+        
+        .loader:nth-child(3) {
+            z-index: 12;
+            width: 40px;
+            height: 20px;
+            margin-top: 50px;
+            margin-left: -20px;
+            border-radius: 0 0 5px 5px;
+            background: #6bb2cd;
+            animation-name: dot3_;
+        }
+        
+        @keyframes dot1_ {
+            3%, 97% {
+                width: 160px;
+                height: 100px;
+                margin-top: -50px;
+                margin-left: -80px;
+            }
+            30%, 36% {
+                width: 80px;
+                height: 120px;
+                margin-top: -60px;
+                margin-left: -40px;
+            }
+            63%, 69% {
+                width: 40px;
+                height: 80px;
+                margin-top: -40px;
+                margin-left: -20px;
+            }
+        }
+        
+        @keyframes dot2_ {
+            3%, 97% {
+                height: 90px;
+                width: 150px;
+                margin-left: -75px;
+                margin-top: -45px;
+            }
+            30%, 36% {
+                width: 70px;
+                height: 96px;
+                margin-left: -35px;
+                margin-top: -48px;
+            }
+            63%, 69% {
+                width: 32px;
+                height: 60px;
+                margin-left: -16px;
+                margin-top: -30px;
+            }
+        }
+        
+        @keyframes dot3_ {
+            3%, 97% {
+                height: 20px;
+                width: 40px;
+                margin-left: -20px;
+                margin-top: 50px;
+            }
+            30%, 36% {
+                width: 8px;
+                height: 8px;
+                margin-left: -5px;
+                margin-top: 49px;
+                border-radius: 8px;
+            }
+            63%, 69% {
+                width: 16px;
+                height: 4px;
+                margin-left: -8px;
+                margin-top: -37px;
+                border-radius: 10px;
+            }
+        }
+    </style>
 </head>
-<body>
-  <!-- Loader -->
-  <div id="loader" class="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50">
-    <div class="text-center">
-      <div class="spinner-border text-success" role="status"></div>
-      <p class="mt-3">กำลังโหลด...</p>
+<body class="bg-gray-50">
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span id="toastMessage"></span>
     </div>
-  </div>
 
-  <!-- Login Section -->
-  <section id="login-sec" class="d-none vh-100 d-flex justify-content-center align-items-center">
-    <div class="card card-shadow p-4 w-80 max-w-sm">
-      <div class="text-center">
-        <img src="https://img.icons8.com/fluency-systems-regular/96/00B900/line-me.png" width="64" alt="LINE Logo">
-        <h4 class="mt-3">Flex Message Editor</h4>
-        <p class="text-muted">ล็อกอินด้วย LINE เพื่อเริ่มใช้งาน</p>
-        <button id="login-btn" class="btn line-theme w-100 mt-3">
-          <i class="bi bi-line"></i> ล็อกอินด้วย LINE
-        </button>
-      </div>
-    </div>
-  </section>
-
-  <!-- Main App Section -->
-  <section id="app-sec" class="d-none">
-    <header class="bg-white shadow-sm py-3">
-      <div class="container">
-        <div class="d-flex justify-content-between align-items-center">
-          <div class="d-flex align-items-center">
-            <img id="profile-img" src="" class="rounded-circle me-2" width="40" height="40" alt="Profile">
-            <h5 class="m-0">สวัสดี, <span id="displayName"></span></h5>
-          </div>
-          <button id="logout-btn" class="btn btn-outline-danger btn-sm">
-            <i class="bi bi-box-arrow-right"></i> ออก
-          </button>
+    <!-- Loader -->
+    <section id="loader">
+        <div class="container mx-auto px-4">
+            <div class="loader"></div>
+            <div class="loader"></div>
+            <div class="loader"></div>
         </div>
-      </div>
+    </section>
+
+    <!-- Header -->
+    <header class="gradient-bg text-white py-6">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19.11 2H4.89C3.84 2 3 2.84 3 3.89v16.22C3 21.16 3.84 22 4.89 22h14.22c1.05 0 1.89-.84 1.89-1.89V3.89C21 2.84 20.16 2 19.11 2zM7.5 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4.5-1.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5-1.5-.67-1.5-1.5zm4.5 1.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold">LINE Flex Message Editor</h1>
+                        <p class="text-blue-100">สร้างและจัดการ Flex Messages อย่างง่ายดาย</p>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button id="saveBtn" class="bg-white text-purple-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors">
+                        💾 บันทึก
+                    </button>
+                    <button id="shareBtn" class="bg-green-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-600 transition-colors">
+                        🔗 แชร์
+                    </button>
+                </div>
+            </div>
+        </div>
     </header>
 
-    <main class="container my-4">
-      <div class="row g-4 flex-container">
-        <!-- Editor -->
-        <div class="col-lg-7">
-          <div class="card card-shadow">
-            <div class="card-body">
-              <div class="mb-3">
-                <label for="altText" class="form-label">Alt Text</label>
-                <input type="text" class="form-control" id="altText" maxlength="400" placeholder="ข้อความแสดงแทน Flex Message">
-                <div class="form-text text-end"><span id="text-count">0</span>/400</div>
-              </div>
-              <div class="mb-3">
-                <div class="d-flex justify-content-between mb-2">
-                  <label for="json" class="form-label">Flex Message JSON</label>
-                  <a href="https://developers.line.biz/flex-simulator/" target="_blank" class="btn btn-sm btn-outline-info">
-                    <i class="bi bi-window-plus"></i> ออกแบบ Flex
-                  </a>
+    <!-- Login Section -->
+    <section id="login-sec" class="min-h-screen flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl card-shadow p-6">
+            <p class="text-gray-800 font-bold text-lg mb-4">กรุณา Login ด้วย LINE เพื่อส่งข้อความไปยังผู้รับ</p>
+            <div class="text-center">
+                <button class="bg-green-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-600 transition-colors" id="login-btn">
+                    <img src="https://img.icons8.com/fluency-systems-regular/48/ffffff/line-me.png" class="inline w-6 h-6 mr-2"/>Login
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <section id="input-sec" class="container mx-auto px-4 py-8 hidden">
+        <div class="mb-6 flex items-center space-x-3">
+            <h2 class="text-3xl font-bold text-gray-800">สวัสดี <span id="displayName"></span></h2>
+            <img id="display-img" class="rounded-full w-12 h-12">
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Editor Panel -->
+            <div class="space-y-6">
+                <div class="bg-white rounded-xl card-shadow p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                        JSON Editor
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <label for="altText" class="text-gray-700">ข้อความแสดงแทน FLEX หน้าแชท <span id="text-count" class="text-gray-500">(0/400)</span></label>
+                            <a href="https://developers.line.biz/flex-simulator/" target="_blank" class="bg-blue-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-600 transition-colors">
+                                📋 ออกแบบ Flex
+                            </a>
+                        </div>
+                        <input type="text" id="altText" maxlength="400" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <textarea id="json" class="code-editor w-full h-80 p-4 rounded-lg resize-none" placeholder="วาง Flex Message JSON ของคุณที่นี่..."></textarea>
+                    </div>
                 </div>
-                <textarea id="json" class="form-control json-editor" rows="15" placeholder="วาง JSON ที่นี่..."></textarea>
-              </div>
-              <div class="d-flex gap-2 justify-content-end">
-                <button id="preview-btn" class="btn btn-outline-primary">
-                  <i class="bi bi-eye"></i> ดูตัวอย่าง
-                </button>
-                <button id="save-btn" class="btn btn-primary">
-                  <i class="bi bi-save"></i> บันทึก
-                </button>
-                <button id="share-btn" class="btn btn-success">
-                  <i class="bi bi-share"></i> แชร์
-                </button>
-              </div>
+                <!-- Saved Messages -->
+                <div class="bg-white rounded-xl card-shadow p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                        ข้อความที่บันทึกไว้
+                    </h2>
+                    <div id="flexlist" class="space-y-2"></div>
+                    <div class="listtemplate hidden">
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <button type="button" class="btn-head flex-1 text-left font-medium text-gray-800"></button>
+                            <div class="relative">
+                                <button type="button" class="bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition-colors" data-bs-toggle="dropdown">
+                                    <span>⋮</span>
+                                </button>
+                                <ul class="dropdown-menu absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
+                                    <li class="m-1"><a class="shared-flex block px-4 py-2 text-green-600 hover:bg-gray-100">แชร์ไปห้องแชทอื่น</a></li>
+                                    <li class="m-1"><a class="show-json block px-4 py-2 text-gray-600 hover:bg-gray-100">ดู JSON</a></li>
+                                    <li class="m-1"><a class="share-link block px-4 py-2 text-yellow-600 hover:bg-gray-100">คัดลอกลิ้งค์แชร์</a></li>
+                                    <li class="m-1"><a class="delete-list block px-4 py-2 text-red-600 hover:bg-gray-100">ลบ</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
+            <!-- Preview Panel -->
+            <div class="space-y-6">
+                <div class="bg-white rounded-xl card-shadow p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="w-2 h-2 bg-purple-500 rounded-full mr-3"></span>
+                        ตัวอย่าง Flex Message
+                    </h2>
+                    <div id="flex-show" class="flex-preview rounded-lg p-6 flex items-center justify-center">
+                        <div class="text-center text-gray-500">
+                            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                            <p class="text-lg font-medium">วาง JSON เพื่อดูตัวอย่าง</p>
+                            <p class="text-sm">Flex Message จะแสดงที่นี่</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Share Panel -->
+                <div class="bg-white rounded-xl card-shadow p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="w-2 h-2 bg-yellow-500 rounded-full mr-3"></span>
+                        แชร์และส่งออก
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="flex space-x-2">
+                            <input id="shareUrl" type="text" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="URL สำหรับแชร์จะปรากฏที่นี่" readonly>
+                            <button id="copyUrlBtn" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                                📋 คัดลอก
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="exportJsonBtn" class="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition-colors">
+                                📄 ส่งออก JSON
+                            </button>
+                            <button id="qrCodeBtn" class="bg-pink-500 text-white px-4 py-2 rounded-lg hover:bg-pink-600 transition-colors">
+                                📱 QR Code
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <!-- Preview -->
-        <div class="col-lg-5">
-          <div class="card card-shadow">
-            <div class="card-header bg-white">
-              <h5 class="m-0"><i class="bi bi-phone"></i> ตัวอย่าง</h5>
-            </div>
-            <div id="flex-preview" class="flex-preview d-flex justify-content-center align-items-center">
-              <div class="text-center text-white p-4">
-                <i class="bi bi-layout-text-sidebar" style="font-size: 3rem;"></i>
-                <p class="mt-3">ตัวอย่าง Flex Message</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    </section>
 
-      <!-- Templates -->
-      <div class="row mt-4">
-        <div class="col-12">
-          <div class="card card-shadow">
-            <div class="card-header bg-white">
-              <h5 class="m-0"><i class="bi bi-collection"></i> Template ของฉัน</h5>
+    <!-- Preview Modal -->
+    <div class="modal fade" id="previewModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header flex justify-between">
+                    <h5 class="modal-title text-xl font-semibold" id="previewModalLabel">Flex Preview</h5>
+                    <button type="button" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors" data-bs-dismiss="modal">ปิด</button>
+                </div>
+                <div class="modal-body" style="background-color: #849ebf; background-image: url(./line%20bg.jpg); background-size: contain;">
+                    <div class="container-fluid">
+                        <div id="flex1"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors" id="json-copy">คัดลอก</button>
+                    <button type="button" class="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors" id="json-update">
+                        อัพเดท <span class="hidden" id="update-id"></span>
+                    </button>
+                </div>
             </div>
-            <div class="card-body">
-              <div id="templates-container" class="row g-3"></div>
-            </div>
-          </div>
         </div>
-      </div>
-    </main>
-  </section>
-
-  <!-- Preview Modal -->
-  <div class="modal fade" id="previewModal" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title"><i class="bi bi-eye"></i> ตัวอย่าง Flex Message</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body p-0">
-          <div id="modal-preview" class="flex-preview" style="min-height: 60vh;"></div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
-          <button type="button" class="btn btn-primary" id="copy-json-btn">
-            <i class="bi bi-clipboard"></i> คัดลอก JSON
-          </button>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <!-- JavaScript Libraries -->
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <script src="flexhtml.js"></script>
-
-  <script>
-    const scriptUrl = 'https://script.google.com/macros/s/AKfycbyjB3lt2Gi6hLFZS4cvW6gcGA5qpYMZsQC3rJuysoBlPb9sXseV9YXWbwWF6oA67yV0/exec'; // แทนที่ด้วย URL จริง
-    let profile = null;
-    let templates = [];
-
-    $(document).ready(() => initializeApp());
-
-    async function initializeApp() {
-      await initializeLiff();
-      setupEventListeners();
-      if (profile) loadTemplates();
-    }
-
-    async function initializeLiff() {
-      try {
-        await liff.init({ liffId: '2005615503-Ar8OBd2N' }); // แทนที่ด้วย LIFF ID จริง
-        if (liff.isLoggedIn()) {
-          const context = await liff.getContext();
-          profile = context.type === 'square_chat' 
-            ? { displayName: 'Open Chat', userId: context.squareMemberId, isSquare: true }
-            : await liff.getProfile();
-          
-          updateUserProfile();
-          $('#loader').fadeOut();
-          $('#app-sec').removeClass('d-none');
-          checkSharedFlex();
-        } else {
-          $('#loader').fadeOut();
-          $('#login-sec').removeClass('d-none').addClass('d-flex');
-        }
-      } catch (error) {
-        showError('ไม่สามารถเชื่อมต่อ LINE ได้');
-      }
-    }
-
-    function setupEventListeners() {
-      $('#login-btn').click(() => liff.login());
-      $('#logout-btn').click(() => { liff.logout(); location.reload(); });
-      $('#altText').on('input', () => $('#text-count').text($('#altText').val().length));
-      $('#json').on('input', updateFlexPreview);
-      $('#preview-btn').click(showPreviewModal);
-      $('#save-btn').click(saveTemplate);
-      $('#share-btn').click(shareFlex);
-      $('#copy-json-btn').click(copyJsonToClipboard);
-
-      $(document).on('click', '.template-action', function() {
-        const action = $(this).data('action');
-        const id = $(this).data('id');
-        handleTemplateAction(action, id);
-      });
-    }
-
-    function updateUserProfile() {
-      $('#displayName').text(profile.displayName);
-      $('#profile-img').attr('src', profile.pictureUrl || 'https://via.placeholder.com/40');
-    }
-
-    function updateFlexPreview() {
-      const json = getFlexJson(true);
-      const $preview = $('#flex-preview');
-      $preview.empty();
-      if (!json) {
-        $preview.html('<div class="text-center text-white p-4"><i class="bi bi-exclamation-triangle" style="font-size: 3rem;"></i><p class="mt-3">JSON ไม่ถูกต้อง</p></div>');
-        return;
-      }
-      flex2html('flex-preview', json);
-    }
-
-    function getFlexJson(noError = false) {
-      try {
-        const jsonText = $('#json').val().trim();
-        if (!jsonText) return null;
-        const json = JSON.parse(jsonText);
-        return json.type === 'flex' ? json : {
-          type: 'flex',
-          altText: $('#altText').val() || 'Flex Message',
-          contents: json
-        };
-      } catch (error) {
-        if (!noError) showError('JSON ไม่ถูกต้อง');
-        return null;
-      }
-    }
-
-    function showPreviewModal() {
-      const flex = getFlexJson();
-      if (!flex) return;
-      $('#modal-preview').empty();
-      flex2html('modal-preview', flex);
-      $('#previewModal').modal('show');
-    }
-
-    function saveTemplate() {
-      const flex = getFlexJson();
-      if (!flex) return;
-      Swal.fire({
-        title: 'บันทึก Template',
-        input: 'text',
-        inputLabel: 'ชื่อ Template',
-        inputPlaceholder: 'ชื่อ Template',
-        showCancelButton: true,
-        confirmButtonText: 'บันทึก',
-        cancelButtonText: 'ยกเลิก',
-        inputValidator: value => !value && 'กรุณาใส่ชื่อ'
-      }).then(result => {
-        if (result.isConfirmed) saveTemplateToServer(result.value, flex);
-      });
-    }
-
-    function saveTemplateToServer(name, flex) {
-      $.ajax({
-        url: scriptUrl,
-        method: 'POST',
-        dataType: 'jsonp',
-        data: {
-          q: 'put',
-          name,
-          flex: JSON.stringify(flex),
-          altText: $('#altText').val(),
-          uid: profile.userId,
-          isSquare: profile.isSquare,
-          liff_id: liff.getContext().liffId
-        },
-        success: response => {
-          if (response.result === 'duplicate') {
-            showError('ชื่อ Template ซ้ำ');
-          } else if (response.status === 200) {
-            Swal.fire('สำเร็จ', 'บันทึก Template แล้ว', 'success');
-            loadTemplates();
-          } else {
-            showError(response.error || 'ไม่สามารถบันทึกได้');
-          }
-        },
-        error: () => showError('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้')
-      });
-    }
-
-    async function shareFlex() {
-      const flex = getFlexJson();
-      if (!flex) return;
-      try {
-        await liff.shareTargetPicker([flex]);
-      } catch (error) {
-        showError('ไม่สามารถแชร์ได้');
-      }
-    }
-
-    function loadTemplates() {
-      $.ajax({
-        url: scriptUrl,
-        method: 'POST',
-        dataType: 'jsonp',
-        data: {
-          q: 'get',
-          uid: profile.userId,
-          isSquare: profile.isSquare
-        },
-        beforeSend: () => $('#templates-container').html('<div class="text-center py-5"><div class="spinner-border text-success"></div></div>'),
-        success: response => {
-          templates = response.status === 200 ? response.data : [];
-          displayTemplates();
-        },
-        error: () => showError('ไม่สามารถโหลด Template ได้'),
-        complete: () => $('#templates-container').find('.spinner-border').remove()
-      });
-    }
-
-    function displayTemplates() {
-      const $container = $('#templates-container').empty();
-      if (!templates.length) {
-        $container.html('<div class="text-center py-5"><i class="bi bi-folder-x" style="font-size: 3rem; color: #adb5bd;"></i><p class="mt-3 text-muted">ไม่มี Template</p></div>');
-        return;
-      }
-      templates.forEach(t => {
-        const date = new Date(t.createdAt).toLocaleDateString('th-TH');
-        $container.append(`
-          <div class="col-md-6 col-lg-4">
-            <div class="card card-shadow">
-              <div class="card-body">
-                <div class="d-flex justify-content-between">
-                  <h6 class="card-title mb-1">${t.name}</h6>
-                  <span class="badge bg-light text-dark">${date}</span>
+    <!-- QR Code Modal -->
+    <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-8 max-w-sm mx-4">
+            <h3 class="text-xl font-semibold text-center mb-4">QR Code สำหรับแชร์</h3>
+            <div id="qrCodeContainer" class="flex justify-center mb-4">
+                <div class="w-48 h-48 bg-gray-200 rounded-lg flex items-center justify-center">
+                    <span class="text-gray-500">QR Code จะแสดงที่นี่</span>
                 </div>
-                <p class="text-muted small">${t.altText || 'ไม่มี Alt Text'}</p>
-                <div class="d-flex justify-content-end gap-2">
-                  <button class="btn btn-sm btn-outline-secondary template-action" data-action="share" data-id="${t.flex_id}">
-                    <i class="bi bi-share"></i>
-                  </button>
-                  <button class="btn btn-sm btn-outline-primary template-action" data-action="preview" data-id="${t.flex_id}">
-                    <i class="bi bi-eye"></i>
-                  </button>
-                  <button class="btn btn-sm btn-outline-info template-action" data-action="edit" data-id="${t.flex_id}">
-                    <i class="bi bi-pencil"></i>
-                  </button>
-                  <button class="btn btn-sm btn-outline-danger template-action" data-action="delete" data-id="${t.flex_id}">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              </div>
             </div>
-          </div>
-        `);
-      });
-    }
+            <button id="closeQrBtn" class="w-full bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                ปิด
+            </button>
+        </div>
+    </div>
 
-    function handleTemplateAction(action, id) {
-      const template = templates.find(t => t.flex_id === id);
-      if (!template) return showError('ไม่พบ Template');
-
-      switch (action) {
-        case 'preview':
-          try {
-            const flex = JSON.parse(template.flex);
-            $('#modal-preview').empty();
-            flex2html('modal-preview', flex);
-            $('#previewModal').modal('show');
-          } catch {
-            showError('JSON ไม่ถูกต้อง');
-          }
-          break;
-        case 'share':
-          try {
-            liff.shareTargetPicker([JSON.parse(template.flex)]);
-          } catch {
-            showError('ไม่สามารถแชร์ได้');
-          }
-          break;
-        case 'edit':
-          $('#altText').val(template.altText);
-          $('#json').val(JSON.stringify(JSON.parse(template.flex), null, 2));
-          updateFlexPreview();
-          Swal.fire({
-            title: 'แก้ไข Template',
-            input: 'text',
-            inputLabel: 'ชื่อ Template',
-            inputValue: template.name,
-            showCancelButton: true,
-            confirmButtonText: 'บันทึก',
-            inputValidator: value => !value && 'กรุณาใส่ชื่อ'
-          }).then(result => {
-            if (result.isConfirmed) {
-              const flex = getFlexJson();
-              if (!flex) return;
-              $.ajax({
-                url: scriptUrl,
-                method: 'POST',
-                dataType: 'jsonp',
-                data: {
-                  q: 'update',
-                  id: template.flex_id,
-                  flex: JSON.stringify(flex),
-                  altText: $('#altText').val(),
-                  uid: profile.userId
-                },
-                success: response => {
-                  if (response.status === 200) {
-                    Swal.fire('สำเร็จ', 'อัปเดต Template แล้ว', 'success');
-                    loadTemplates();
-                  } else {
-                    showError(response.error || 'ไม่สามารถอัปเดตได้');
-                  }
-                },
-                error: () => showError('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้')
-              });
-            }
-          });
-          break;
-        case 'delete':
-          Swal.fire({
-            title: 'ยืนยันการลบ',
-            text: `ลบ "${template.name}"?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'ลบ',
-            cancelButtonText: 'ยกเลิก'
-          }).then(result => {
-            if (result.isConfirmed) {
-              $.ajax({
-                url: scriptUrl,
-                method: 'POST',
-                dataType: 'jsonp',
-                data: {
-                  q: 'delete',
-                  id: template.flex_id,
-                  uid: profile.userId
-                },
-                success: response => {
-                  if (response.status === 200) {
-                    Swal.fire('สำเร็จ', 'ลบ Template แล้ว', 'success');
-                    loadTemplates();
-                  } else {
-                    showError(response.error || 'ไม่สามารถลบได้');
-                  }
-                },
-                error: () => showError('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้')
-              });
-            }
-          });
-          break;
-      }
-    }
-
-    function checkSharedFlex() {
-      const flexId = new URLSearchParams(window.location.search).get('s');
-      if (flexId) {
-        $.ajax({
-          url: scriptUrl,
-          method: 'POST',
-          dataType: 'jsonp',
-          data: { q: 'getflex', id: flexId },
-          success: response => {
-            if (response.status === 200 && response.flex) {
-              $('#json').val(JSON.stringify(JSON.parse(response.flex), null, 2));
-              $('#altText').val(response.altText);
-              updateFlexPreview();
-              shareFlex();
-            } else {
-              showError('ไม่พบ Flex ที่แชร์');
-            }
-          },
-          error: () => showError('ไม่สามารถโหลด Flex ได้')
+    <!-- JavaScript from Original Code -->
+    <script>
+        var Toast;
+        $(document).ready(() => {
+            Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 1500,
+                timerProgressBar: true,
+            });
+            main();
         });
-      }
-    }
 
-    function copyJsonToClipboard() {
-      navigator.clipboard.writeText($('#json').val()).then(() => {
-        Swal.fire({ icon: 'success', title: 'คัดลอกแล้ว', timer: 1500, showConfirmButton: false });
-      }).catch(() => showError('ไม่สามารถคัดลอกได้'));
-    }
+        function copy(id = 'json-code') {
+            let $temp = $('<input>');
+            $('body').append($temp);
+            let element = document.getElementById(id);
+            element.select();
+            element.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(element.value).then(() => {
+                $temp.remove();
+                showToast('คัดลอกเรียบร้อย');
+            }, () => {
+                $temp.remove();
+                showToast('คัดลอกล้มเหลว', true);
+            });
+        }
 
-    function showError(message) {
-      Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: message });
-    }
-  </script>
+        function showToast(message, isError = false) {
+            document.getElementById('toastMessage').textContent = message;
+            const toast = document.getElementById('toast');
+            toast.className = `toast ${isError ? 'error' : ''} show`;
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        const EXPIRE_USERS = [
+            'U026ec80e42049561bd41cf92d4c55955',
+            'U5fb67c286549e2eec9ff7f67e9c15690',
+            'Ud2256fed03eacac0ed0d5d679ebdacde',
+            'U0f88770ee60bc3b9ec52f9a95179d191',
+            'Ue86787127a9bb5465c58d3932ed06bbb'
+        ];
+        var profile, flexlist, flexid = undefined;
+        var scripturl = 'https://script.google.com/macros/s/AKfycbyjB3lt2Gi6hLFZS4cvW6gcGA5qpYMZsQC3rJuysoBlPb9sXseV9YXWbwWF6oA67yV0/exec';
+        var starttime = new Date().getTime();
+
+        async function main() {
+            liff.init({
+                liffId: '2005615503-Ar8OBd2N',
+                withLoginOnExternalBrowser: true
+            });
+
+            liff.ready.then(async () => {
+                let endtime = new Date().getTime();
+                let waittime = 3000 - (endtime - starttime);
+                if (waittime > 0) {
+                    await new Promise(resolve => setTimeout(resolve, waittime));
+                }
+
+                if (liff.isLoggedIn()) {
+                    if (EXPIRE_USERS.includes(liff.getDecodedIDToken().sub)) {
+                        $('section').remove();
+                        $('.modal').remove();
+                        showToast('การทดลองใช้งานหมดอายุ', true);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'การทดลองใช้งานหมดอายุ',
+                            html: 'กรุณาติดต่อผู้พัฒนาเพื่อใช้งานเวอร์ชั่นเต็ม<br>Line ID: <a href="https://line.me/ti/p/FrAUVjmBeJ" target="_blank">wmhakrook</a><br>หรือ โทร <a href="tel:0904017402">090-401-7402</a><br>ขอบคุณครับ',
+                            allowOutsideClick: false,
+                            showConfirmButton: true,
+                            confirmButtonText: 'ปิดหน้านี้',
+                        }).then(() => {
+                            liff.closeWindow();
+                        });
+                        return;
+                    }
+                    var parameter = new URLSearchParams(window.location.search);
+                    flexid = parameter.get('s');
+                    if (flexid) {
+                        $.post(scripturl, {
+                            q: 'getflex',
+                            id: flexid
+                        }).done(function (result) {
+                            if (result.flex) {
+                                $('#loader').addClass('hidden');
+                                $('#json').val(JSON.stringify(JSON.parse(result.flex), undefined, 4));
+                                $('#altText').val(result.altText);
+                                $('#shareBtn').click();
+                            } else {
+                                $('section').remove();
+                                $('.modal').remove();
+                                $('#loader').addClass('hidden');
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'เกิดข้อผิดพลาด',
+                                    text: 'ไม่พบข้อมูล Flex ที่คุณต้องการ',
+                                    allowOutsideClick: false,
+                                    showConfirmButton: true,
+                                    confirmButtonText: 'ปิดหน้านี้',
+                                }).then(() => {
+                                    liff.closeWindow();
+                                });
+                            }
+                        });
+                    } else {
+                        flexid = undefined;
+                        $('#loader').addClass('hidden');
+                        $('#login-sec').addClass('hidden');
+                        $('#input-sec').removeClass('hidden');
+                        let context = await liff.getContext();
+                        if (context.type == 'square_chat') {
+                            profile = { displayName: 'openchat', userId: context.squareMemberId, isSquare: true };
+                        } else {
+                            profile = await liff.getProfile();
+                        }
+                        $('#displayName').html(profile.displayName);
+                        $('#display-img').attr('src', profile.pictureUrl);
+                        getFlex();
+                    }
+                } else {
+                    $('#loader').addClass('hidden');
+                    $('#login-sec').removeClass('hidden');
+                    $('#login-btn').click(function () {
+                        liff.login({ redirectUri: window.location.href });
+                    });
+                }
+            });
+        }
+
+        $('#altText').on('input', function () {
+            let text = $(this).val();
+            $('#text-count').text(`(${text.length}/400)`);
+        });
+
+        $('#json').on('input', function () {
+            if ($(this).val() == '') {
+                $('#flex-show').html(`
+                    <div class="text-center text-gray-500">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        <p class="text-lg font-medium">วาง JSON เพื่อดูตัวอย่าง</p>
+                        <p class="text-sm">Flex Message จะแสดงที่นี่</p>
+                    </div>
+                `);
+                return false;
+            }
+            let json = getJSON(true);
+            if (json) {
+                $('#flex-show').html('');
+                flex2html('flex-show', json);
+            } else {
+                $('#flex-show').html(`<div class="text-center text-white text-sm p-5">Invalid JSON</div>`);
+            }
+        });
+
+        $('#saveBtn').click(function () {
+            let flex = getJSON();
+            if (flex) {
+                Swal.fire({
+                    title: 'กรุณาใส่ชื่อ FLEX',
+                    input: 'text',
+                    inputAttributes: {
+                        autocapitalize: 'off'
+                    },
+                    showCancelButton: true,
+                    confirmButtonText: 'บันทึก',
+                    showLoaderOnConfirm: true,
+                    preConfirm: (templateName) => {
+                        return $.post(scripturl, {
+                            q: 'put',
+                            isSquare: profile.isSquare,
+                            name: templateName,
+                            flex: JSON.stringify(flex),
+                            uid: profile.userId,
+                            liff_id: liff.id
+                        });
+                    },
+                    allowOutsideClick: () => !Swal.isLoading()
+                }).then((output) => {
+                    if (output.value.result == 'duplicate') {
+                        return Swal.fire({
+                            icon: 'warning',
+                            title: 'Oops...',
+                            text: 'ชื่อซ้ำ',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                    }
+                    let item = output.value.data;
+                    let row = $('.listtemplate').clone();
+                    $(row).removeClass('hidden listtemplate');
+                    $(row).attr('id', item[0]);
+                    $(row).find('.btn-head').text(item[1]);
+                    $(row).find('.show-json').append(`<p class="hidden">${item[2]}</p>`);
+                    $(row).find('.delete-list').attr('id', item[0]);
+                    $(row).find('.share-link').attr('data-clipboard-text', 'https://liff.line.me/' + liff.getContext().liffId + '?s=' + item[0]);
+                    $('#json').val(JSON.stringify(JSON.parse(item[2]), undefined, 4));
+                    $('#flexlist').append(row);
+                    setButtonEventListener();
+                    showToast('บันทึกเรียบร้อย');
+                });
+            }
+        });
+
+        $('#shareBtn').click(function () {
+            var flex = getJSON();
+            if (flex) {
+                if (JSON.stringify(flex).indexOf('{{share}}') > -1 && !flexid) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'หากกำหนดให้มีคีย์เวิร์ด share คุณจำเป็นที่จะต้องบันทึก Flex นี้ก่อนการแชร์',
+                    });
+                    return false;
+                }
+                sendShare(flex);
+                generateShareUrl(flex);
+            }
+        });
+
+        $('#copyUrlBtn').click(function () {
+            if ($('#shareUrl').val()) {
+                navigator.clipboard.writeText($('#shareUrl').val());
+                showToast('คัดลอก URL เรียบร้อยแล้ว');
+            } else {
+                showToast('กรุณาสร้าง URL ก่อน', true);
+            }
+        });
+
+        $('#exportJsonBtn').click(function () {
+            let flex = getJSON();
+            if (!flex) {
+                showToast('ไม่มีข้อมูลให้ส่งออก', true);
+                return;
+            }
+            const blob = new Blob([JSON.stringify(flex, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'flex-message.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('ส่งออก JSON เรียบร้อยแล้ว');
+        });
+
+        $('#qrCodeBtn').click(function () {
+            if (!$('#shareUrl').val()) {
+                showToast('กรุณาสร้าง URL ก่อน', true);
+                return;
+            }
+            $('#qrModal').removeClass('hidden').addClass('flex');
+        });
+
+        $('#closeQrBtn').click(function () {
+            $('#qrModal').addClass('hidden').removeClass('flex');
+        });
+
+        function generateShareUrl(flex) {
+            if (!flex) {
+                showToast('กรุณาใส่ JSON ที่ถูกต้องก่อนแชร์', true);
+                return;
+            }
+            const encoded = btoa(JSON.stringify(flex));
+            const url = `${window.location.origin}${window.location.pathname}?flex=${encoded}`;
+            $('#shareUrl').val(url);
+            showToast('สร้าง URL สำหรับแชร์เรียบร้อยแล้ว');
+        }
+
+        function update(id) {
+            let flex;
+            try {
+                flex = JSON.parse($('#flex1').find('textarea').val());
+            } catch (error) {
+                showToast('Invalid JSON', true);
+                return false;
+            }
+            if (flex) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'กำลังอัพเดท JSON...',
+                    text: 'กรุณารอสักครู่',
+                    allowOutsideClick: false,
+                });
+                Swal.showLoading(Swal.getConfirmButton());
+                $.post(scripturl, {
+                    q: 'update',
+                    isSquare: profile.isSquare,
+                    id: id,
+                    flex: JSON.stringify(flex),
+                    uid: liff.getDecodedIDToken().sub,
+                    liff_id: liff.id
+                }, function (output) {
+                    if (output.status == 200) {
+                        let delbtn = $(`#${id}`);
+                        $(delbtn).closest('ul').find('.show-json p').html(JSON.stringify(flex));
+                        $('#json').val(JSON.stringify(flex, undefined, 4)).change();
+                        setButtonEventListener();
+                        showToast('อัพเดทเรียบร้อย');
+                    } else {
+                        showToast('อัพเดทไม่สำเร็จ', true);
+                    }
+                });
+            }
+        }
+
+        function getFlex() {
+            $('#flexlist').LoadingOverlay("show");
+            let uid = profile.userId;
+            $.post(scripturl, {
+                q: 'get',
+                isSquare: profile.isSquare,
+                uid: uid
+            }).done(function (result) {
+                $('#flexlist').LoadingOverlay("hide");
+                if (result.status != 200) {
+                    return true;
+                }
+                flexlist = result.data;
+                if (flexlist.length > 0) {
+                    $('#flexlist').html('');
+                    flexlist.forEach(function (item) {
+                        let row = $('.listtemplate').clone();
+                        $(row).removeClass('hidden listtemplate');
+                        $(row).find('.btn-head').text(item.name);
+                        $(row).find('.show-json').append(`<p class="hidden">${item.flex}</p>`);
+                        $(row).find('.delete-list').attr('id', item.flex_id);
+                        $(row).find('.share-link').attr('data-clipboard-text', 'https://liff.line.me/' + liff.id + '?s=' + item.flex_id);
+                        $('#flexlist').append(row);
+                    });
+                } else {
+                    $('#flexlist').html('<p class="text-gray-500 text-center py-4">ยังไม่มีข้อความที่บันทึกไว้</p>');
+                }
+                setButtonEventListener();
+            });
+        }
+
+        function getJSON(noerror = false) {
+            let json = $('#json').val();
+            try {
+                json = JSON.parse(json);
+            } catch (error) {
+                if (!noerror) {
+                    showToast('Invalid JSON', true);
+                }
+                return false;
+            }
+            let flex;
+            if (json.type != 'flex') {
+                let altText = $('#altText').val();
+                if (altText == '') altText = 'FLEX MESSAGE';
+                flex = {
+                    type: 'flex',
+                    altText: altText,
+                    contents: json
+                };
+            } else {
+                flex = json;
+            }
+            return flex;
+        }
+
+        async function sendShare(flex) {
+            const result = await liff.shareTargetPicker([flex]);
+            if (result) {
+                showToast('ส่งข้อความสำเร็จ');
+                if (flexid) {
+                    liff.closeWindow();
+                }
+            } else {
+                const [majorVer, minorVer, patchVer] = (liff.getLineVersion() || '').split('.');
+                if (minorVer === undefined || (parseInt(majorVer) >= 10 && parseInt(minorVer) >= 10 && parseInt(patchVer) > 0)) {
+                    if (flexid) {
+                        liff.closeWindow();
+                    }
+                }
+            }
+        }
+
+        function setButtonEventListener() {
+            $('.btn-head').off('click').click(function () {
+                let json = $(this).parent().find('ul').find('.show-json p').text();
+                $('#json').val(JSON.stringify(JSON.parse(json), undefined, 4));
+                setTimeout(() => {
+                    $('#json').trigger('input');
+                }, 200);
+                $('#altText').val($(this).text());
+                $('#flex-show').html('');
+            });
+
+            $('.show-json').off('click').click(function () {
+                $('#json-update').show();
+                $('#json-copy').show();
+                $('#flex1').html(`<div><textarea id="json-code" class="p-2 form-control bg-white w-full rounded-lg" rows="20">${JSON.stringify(JSON.parse($(this).find('p').text()), undefined, 4)}</textarea></div>`);
+                $('#json-copy').off('click').click(function () {
+                    copy();
+                });
+                let showjsonbtn = $(this);
+                $('#json-update').off('click').click(function () {
+                    update(showjsonbtn.closest('ul').find('.delete-list').attr('id'));
+                });
+                $('.modal').modal('show');
+            });
+
+            $('.delete-list').off('click').click(function () {
+                let button = $(this);
+                Swal.fire({
+                    title: 'คุณต้องการลบรายการนี้ใช่หรือไม่?',
+                    text: "การลบรายการนี้จะไม่สามารถกู้คืนได้",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'ลบรายการนี้',
+                    cancelButtonText: 'ยกเลิก'
+                }).then((result) => {
+                    if (result.value) {
+                        Swal.fire({
+                            title: 'กำลังลบรายการ',
+                            text: 'กรุณารอสักครู่',
+                            allowOutsideClick: false,
+                        });
+                        Swal.showLoading(Swal.getConfirmButton());
+                        $.post(scripturl, {
+                            q: 'delete',
+                            id: $(this).attr('id')
+                        }, function (result) {
+                            if (result.result == 200) {
+                                showToast('ลบรายการสำเร็จ');
+                                $(button).closest('.flex').remove();
+                            } else {
+                                showToast('ลบรายการไม่สำเร็จ', true);
+                            }
+                        });
+                    }
+                });
+            });
+
+            $('.share-link').off('click').click(function () {
+                let $temp = $('<input>');
+                $('body').append($temp);
+                navigator.clipboard.writeText($(this).attr('data-clipboard-text')).then(() => {
+                    $temp.remove();
+                    showToast('คัดลอกลิ้งค์แชร์เรียบร้อย');
+                }, () => {
+                    $temp.remove();
+                    showToast('คัดลอกล้มเหลว', true);
+                });
+            });
+
+            $('.shared-flex').off('click').click(function () {
+                let flextext = $(this).closest('ul').find('.show-json').find('p').text();
+                let flex = JSON.parse(flextext);
+                sendShare(flex);
+            });
+        }
+    </script>
 </body>
 </html>
