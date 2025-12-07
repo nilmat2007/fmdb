@@ -20,13 +20,7 @@
   <!-- LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
-  <!-- FlexHTML Library (CDN) -->
-  <!-- โหลด CSS ของ Flex2HTML จาก CDN เพื่อความชัวร์ในการแสดงผล -->
-  <link href="https://cdn.jsdelivr.net/gh/mmthong/flex2html@main/css/flex2html.css" rel="stylesheet">
-  <!-- โหลด JS ของ Flex2HTML จาก CDN -->
-  <script src="https://cdn.jsdelivr.net/gh/mmthong/flex2html@main/flex2html.min.js"></script>
-  
-  <!-- Custom Library (Local Fallback) -->
+  <!-- Custom Library (Local) -->
   <script src="flexhtml.js"></script>
   <link rel="stylesheet" href="flexhtml.css">
 
@@ -106,7 +100,24 @@
       box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
     }
     
-    /* REMOVED .reset-this style that caused issues */
+    /* Reset CSS for FlexHTML - Safe Mode */
+    .reset-this {
+        /* all: initial;  <-- เอาออกเพราะทำให้ div หาย */
+        font-family: 'Kanit', sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+        color: #000000; /* บังคับสีดำ */
+        text-align: left;
+        width: 100%;
+    }
+    .reset-this * {
+        box-sizing: border-box;
+    }
+    /* ป้องกัน Bootstrap กวน */
+    .reset-this h1, .reset-this h2, .reset-this h3, .reset-this h4, .reset-this h5, .reset-this h6, .reset-this p {
+        margin: 0;
+        padding: 0;
+    }
 
     .flex-card {
       transition: transform 0.2s;
