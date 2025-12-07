@@ -237,7 +237,23 @@
 
     <!-- Saved List -->
     <div class="mt-5">
-      <h5 class="fw-bold mb-3 border-start border-4 border-primary ps-2"> รายการที่บันทึกไว้</h5>
+      <div class="d-flex justify-content-between align-items-end mb-3">
+        <h5 class="fw-bold mb-0 border-start border-4 border-primary ps-2"> รายการที่บันทึกไว้</h5>
+      </div>
+
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="input-group shadow-sm">
+            <span class="input-group-text bg-white border-end-0 text-muted">
+              <i class="bi bi-search"></i>
+            </span>
+            <input type="text" id="search-input" class="form-control border-start-0 ps-0" placeholder="ค้นหาชื่อ Template..." autocomplete="off">
+            <button class="btn btn-white border border-start-0" type="button" id="clear-search-btn" style="display: none;">
+              <i class="bi bi-x-circle-fill text-secondary"></i>
+            </button>
+          </div>
+        </div>
+      </div>
       <div id="flexlist" class="row g-3">
         <!-- Template Item (Hidden) -->
         <div class="col-md-6 col-lg-4 template-item hide">
@@ -313,6 +329,44 @@
             }
         });
         $('#send-chat-btn').click(sendInChat);
+        $('#search-input').on('keyup', function() {
+        var value = $(this).val().toLowerCase();
+        var hasResult = false;
+
+        // แสดง/ซ่อน ปุ่ม Clear ตามข้อความ
+        if (value.length > 0) {
+            $('#clear-search-btn').show();
+        } else {
+            $('#clear-search-btn').hide();
+        }
+
+        // วนลูปเช็ครายการทั้งหมด (ยกเว้นตัว Template ต้นแบบ)
+        $('#flexlist > div:not(.template-item)').filter(function() {
+            // ดึงชื่อจาก class .item-name มาเทียบ
+            var text = $(this).find('.item-name').text().toLowerCase();
+            var isMatch = text.indexOf(value) > -1;
+            
+            $(this).toggle(isMatch); // แสดงถ้าตรง ซ่อนถ้าไม่ตรง
+            
+            if (isMatch) hasResult = true;
+        });
+
+        // จัดการกรณีไม่พบข้อมูล
+        $('#no-search-result').remove(); // ลบข้อความแจ้งเตือนเก่าออกก่อน
+        if (!hasResult && value.length > 0) {
+            $('#flexlist').after(`
+                <div id="no-search-result" class="text-center text-muted py-4 animate__animated animate__fadeIn">
+                    <i class="bi bi-search display-6 d-block mb-2 opacity-50"></i>
+                    ไม่พบรายการที่ค้นหา "${$(this).val()}"
+                </div>
+            `);
+        }
+    });
+
+    // ปุ่มกดล้างคำค้นหา
+    $('#clear-search-btn').click(function() {
+        $('#search-input').val('').trigger('keyup').focus();
+    });
     });
 
     async function main() {
