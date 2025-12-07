@@ -112,15 +112,6 @@
     .page-link { color: #00B900; cursor: pointer; }
     .page-link:hover { color: #009900; }
     .page-item.active .page-link { background-color: #00B900; border-color: #00B900; color: white; }
-    
-    /* Reset CSS for FlexHTML */
-    .reset-this {
-        all: initial;
-        font-family: 'Kanit', sans-serif;
-    }
-    .reset-this * {
-        box-sizing: border-box;
-    }
   </style>
 </head>
 
@@ -423,7 +414,7 @@
             $(row).removeClass('hide listtemplate');
             $(row).attr('id', item.flex_id);
             $(row).find('.btn-head').text(item.name);
-            $(row).find('.show-json').append(`<p style="display: none">${item.flex}</p>`); 
+            $(row).find('.show-json').append(`<p style="display: none">${item.flex}</p>`); // Changed show-preview to show-json for simplicity
             $(row).find('.delete-list').attr('id', item.flex_id);
             $(row).find('.share-link').attr('data-clipboard-text', 'https://liff.line.me/' + liff.getContext().liffId + '?s=' + item.flex_id);
             
@@ -437,7 +428,7 @@
             $('#flexlist').append(row);
         });
 
-        setButtonEventListener(); 
+        setButtonEventListener(); // Attach events to new items
         renderPaginationControls();
     }
 
@@ -460,106 +451,32 @@
         $pagination.append(`<li class="page-item ${nextDisabled}"><a class="page-link" onclick="renderPage(${currentPage + 1})">ถัดไป</a></li>`);
     }
 
-    // --- Helper for Video Fallback ---
-    function preprocessFlexForPreview(node) {
-        if (!node || typeof node !== 'object') return node;
-        
-        // Deep clone first to be safe, but since we call this on a clone it is fine
-        if (Array.isArray(node)) {
-            return node.map(preprocessFlexForPreview);
-        }
-        
-        // Transform Video to Image for Preview
-        // The key is to replace the whole node with its altContent
-        if (node.type === 'video' && node.altContent) {
-            return preprocessFlexForPreview(node.altContent);
-        }
-
-        const newNode = {};
-        Object.keys(node).forEach(key => {
-            newNode[key] = preprocessFlexForPreview(node[key]);
-        });
-        return newNode;
-    }
-
     // --- Inputs ---
     $('#altText').on('input', function () {
       let text = $(this).val()
       $('#text-count').text(`(${text.length}/400)`)
     })
     $('#json').on('input', function () {
-      renderPreview();
+      if ($(this).val() == '') {
+        $('#flex-show').html('<div class="text-light w-100 text-center my-3">พื้นที่แสดงตัวอย่าง Flex จะปรากฏที่นี่</div>')
+        return false
+      }
+      let json = getJSON(true)
+      if (json) {
+        $('#flex-show').html('')
+        flex2html('flex-show', json)
+      } else {
+        $('#flex-show').html(`<div style="color: white; font-size: 1rem; text-align: center; padding-top: 20px">Invalid JSON</div>`)
+      }
     })
-    
-    function renderPreview() {
-        const jsonStr = $('#json').val();
-        const $display = $('#flex-show');
-        
-        if (!jsonStr.trim()) {
-            $display.html('<div class="text-light w-100 text-center my-3">พื้นที่แสดงตัวอย่าง Flex จะปรากฏที่นี่</div>');
-            return;
-        }
-
-        try {
-            let json = JSON.parse(jsonStr);
-
-            // 1. Handle Wrapper Logic (Mimic getJSON behavior for wrapper)
-            // If it DOES NOT have "type: flex", we wrap it. 
-            // If it DOES have "type: flex", we keep it.
-            // Note: flex2html might fail if the wrapper is there, depending on implementation.
-            // BUT the user said the Restaurant JSON (which has NO wrapper) works with their original code that adds wrapper.
-            // AND the Video JSON (which HAS wrapper) failed.
-            
-            // Let's ensure we are consistent.
-            let previewJson = JSON.parse(JSON.stringify(json)); // Deep clone for preview processing
-
-            if (previewJson.type !== 'flex') {
-                previewJson = {
-                    type: 'flex',
-                    altText: $('#altText').val() || 'Flex Message',
-                    contents: previewJson
-                };
-            }
-
-            // 2. Preprocess Video -> Image
-            previewJson = preprocessFlexForPreview(previewJson);
-
-            $display.empty();
-            
-            if (typeof flex2html === 'function') {
-                // IMPORTANT: Some versions of flex2html expect the "contents" object, not the full wrapper.
-                // If the library fails with the wrapper, we might need to pass previewJson.contents
-                // However, based on getJSON() logic, it seems it passes the full object.
-                // Let's try passing the full object as intended.
-                flex2html('flex-show', previewJson);
-            } else {
-                $display.html('<div class="alert alert-warning">Library flexhtml.js ไม่ถูกโหลด</div>');
-            }
-        } catch (e) {
-            $display.html(`<div style="color: white; font-size: 1rem; text-align: center; padding-top: 20px">Invalid JSON</div>`);
-        }
-    }
-
     $('#preview').click(function () {
-      let flex = getJSON(true) 
-      if (!flex) return;
-      
-      // Fix for modal preview
-      let previewJson = JSON.parse(JSON.stringify(flex)); // Clone
-      
-      // Wrapper check (getJSON already wraps it if needed)
-      // So flex here is ALREADY wrapped.
-      
-      // Preprocess Video
-      previewJson = preprocessFlexForPreview(previewJson);
-
-      if (previewJson) {
+      let flex = getJSON()
+      if (flex) {
         $('#flex1').html('');
-        flex2html("flex1", previewJson);
+        flex2html("flex1", flex);
         $('.modal').modal('show');
       }
     })
-    
     $('#shared').click(function () {
       var flex = getJSON()
       if (flex) {
@@ -635,6 +552,7 @@
         }, function (output) {
           if (output.status == 200) {
             let delbtn = $(`#${id}`)
+            // Update data locally then re-render if needed, but reloading is safer
             getFlex(); // Reload list
             $('.modal').modal('hide')
             Swal.fire({ icon: 'success', title: 'อัพเดทเรียบร้อย', showConfirmButton: false, timer: 1500 })
@@ -720,18 +638,14 @@
           $('#json').trigger('input')
         }, 200);
         $('#altText').val($(this).text())
-        // renderPreview will handle this now via input trigger
-        // $('#flex-show').html('')
+        $('#flex-show').html('')
         // flex2html('flex-show', JSON.parse(json))
       })
       
       $('.show-json').off('click').click(function () {
         $('#json-update').show()
         $('#json-copy').show()
-        // Preview logic inside Modal needs handling too? 
-        // Currently it just shows code. That is fine as per original logic.
         $('#flex1').html(`<div><textarea id="json-code" class="p-2 form-control bg-white" rows="20">${JSON.stringify(JSON.parse($(this).find('p').text()), undefined, 4)}</textarea></div>`);
-        
         $('#json-copy').off('click').click(function () { copy() })
         let showjsonbtn = $(this)
         $('#json-update').off('click').click(function () {
@@ -796,6 +710,12 @@
       })
     }
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 
 </html>
