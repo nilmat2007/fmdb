@@ -112,7 +112,6 @@
     .flex-card {
       transition: transform 0.2s;
       border-left: 5px solid var(--primary-color);
-      /* เพิ่ม position relative เพื่อให้เป็นจุดอ้างอิง */
       position: relative;
     }
     
@@ -125,7 +124,6 @@
     .high-z-index {
       z-index: 1050 !important;
       position: relative;
-      /* ต้องปิด transform ชั่วคราวเพื่อให้ z-index ทำงานได้เต็มที่ในบาง browser */
       transform: none !important; 
     }
 
@@ -134,6 +132,34 @@
       height: 50px;
       object-fit: cover;
       border: 2px solid var(--primary-color);
+    }
+    
+    .code-toolbar {
+        background: #f1f3f5;
+        padding: 5px 10px;
+        border-radius: 5px 5px 0 0;
+        border: 1px solid #dee2e6;
+        border-bottom: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Pagination Styles */
+    .page-link {
+        color: var(--primary-color);
+        cursor: pointer;
+    }
+    .page-link:hover {
+        color: #05b34c;
+    }
+    .page-item.active .page-link {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+    }
+    .page-item.disabled .page-link {
+        color: #6c757d;
     }
   </style>
 </head>
@@ -166,7 +192,10 @@
         <h4 class="fw-bold mb-0">สวัสดี, <span id="displayName" class="text-primary">User</span></h4>
         <small class="text-muted">สร้างและแชร์ Flex Message ง่ายๆ</small>
       </div>
-      <img id="display-img" class="rounded-circle avatar-img shadow-sm" src="" alt="Profile">
+      <div class="d-flex gap-2">
+         <button onclick="clearCache()" class="btn btn-sm btn-outline-secondary" title="ล้าง Cache Draft"><i class="bi bi-eraser"></i></button>
+         <img id="display-img" class="rounded-circle avatar-img shadow-sm" src="" alt="Profile">
+      </div>
     </div>
 
     <!-- Inputs -->
@@ -185,12 +214,29 @@
 
             <div class="mb-2 d-flex justify-content-between align-items-center">
               <label for="json" class="form-label fw-bold mb-0">Flex JSON Code</label>
-              <a href="https://developers.line.biz/flex-simulator/" target="_blank" class="btn btn-sm btn-outline-info">
-                <i class="bi bi-tools"></i> Flex Simulator
-              </a>
+              <div class="dropdown">
+                  <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-magic"></i> ตัวอย่าง
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item template-select" href="#" data-type="welcome">👋 Welcome Message</a></li>
+                    <li><a class="dropdown-item template-select" href="#" data-type="promotion">🏷️ Promotion Card</a></li>
+                    <li><a class="dropdown-item template-select" href="#" data-type="receipt">🧾 Receipt</a></li>
+                  </ul>
+                  <a href="https://developers.line.biz/flex-simulator/" target="_blank" class="btn btn-sm btn-outline-info ms-1">
+                    <i class="bi bi-tools"></i> Sim
+                  </a>
+              </div>
             </div>
             
-            <textarea id="json" class="form-control font-monospace mb-3" rows="12" style="font-size: 0.85rem;" placeholder='วาง JSON code ที่นี่...'></textarea>
+            <div class="code-toolbar">
+                <small class="text-muted"><i class="bi bi-code-slash"></i> JSON Editor</small>
+                <div>
+                    <button class="btn btn-xs btn-light border btn-sm" id="format-btn" title="จัดรูปแบบโค้ด"><i class="bi bi-text-indent-left"></i> Format</button>
+                    <button class="btn btn-xs btn-light border btn-sm text-danger" id="clear-json-btn" title="ล้างโค้ด"><i class="bi bi-trash"></i></button>
+                </div>
+            </div>
+            <textarea id="json" class="form-control font-monospace mb-3 rounded-0 rounded-bottom" rows="12" style="font-size: 0.85rem; border-top: 0;" placeholder='วาง JSON code ที่นี่...'></textarea>
 
             <div class="row g-2">
               <div class="col-6">
@@ -217,8 +263,9 @@
       <!-- Preview -->
       <div class="col-lg-5">
         <div class="card shadow-sm border-0 h-100">
-          <div class="card-header bg-white fw-bold">
-            <i class="bi bi-eye"></i> Live Preview
+          <div class="card-header bg-white fw-bold d-flex justify-content-between">
+            <span><i class="bi bi-eye"></i> Live Preview</span>
+            <small id="status-text" class="text-muted fw-normal" style="font-size: 0.8rem;"></small>
           </div>
           <div class="preview-box">
              <!-- Container for FlexHTML -->
@@ -237,7 +284,15 @@
 
     <!-- Saved List -->
     <div class="mt-5">
-      <h5 class="fw-bold mb-3 border-start border-4 border-primary ps-2"> รายการที่บันทึกไว้</h5>
+      <!-- Search Bar -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+         <h5 class="fw-bold mb-0 border-start border-4 border-primary ps-2"> รายการที่บันทึกไว้</h5>
+         <div class="input-group input-group-sm" style="width: 200px;">
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <input type="text" id="search-input" class="form-control" placeholder="ค้นหาชื่อ...">
+         </div>
+      </div>
+
       <div id="flexlist" class="row g-3">
         <!-- Template Item (Hidden) -->
         <div class="col-md-6 col-lg-4 template-item hide">
@@ -245,7 +300,6 @@
             <div class="card-body d-flex justify-content-between align-items-center">
               <div class="text-truncate me-2 w-100 fw-bold item-name">Template Name</div>
               <div class="dropdown">
-                <!-- เพิ่ม ID หรือ Class เพื่อใช้อ้างอิงได้ง่ายขึ้นถ้าจำเป็น แต่ใช้โครงสร้างเดิมได้ -->
                 <button class="btn btn-light btn-sm rounded-circle" data-bs-toggle="dropdown" aria-expanded="false">
                   <i class="bi bi-three-dots-vertical"></i>
                 </button>
@@ -262,6 +316,14 @@
         </div>
         <!-- End Template -->
       </div>
+      
+      <!-- Pagination Controls -->
+      <nav aria-label="Page navigation" class="mt-4">
+        <ul id="pagination-controls" class="pagination justify-content-center mb-0">
+            <!-- JS will populate this -->
+        </ul>
+      </nav>
+
       <div id="empty-list" class="text-center text-muted py-5 hide">
         ยังไม่มีรายการที่บันทึก
       </div>
@@ -281,6 +343,13 @@
     let userProfile = null;
     let currentFlexId = null;
     let itemTemplate = null; // Store template
+    let autoSaveTimer = null;
+    
+    // Pagination State
+    let allItems = []; // ข้อมูลทั้งหมดจาก API
+    let filteredItems = []; // ข้อมูลหลังค้นหา
+    let currentPage = 1;
+    const itemsPerPage = 6; // จำนวนรายการต่อหน้า
 
     // --- Utils ---
     const toast = Swal.mixin({
@@ -290,6 +359,24 @@
       timer: 2000,
       timerProgressBar: true
     });
+    
+    // --- Template Data ---
+    const SAMPLE_TEMPLATES = {
+        welcome: {
+          "type": "bubble",
+          "hero": { "type": "image", "url": "https://scdn.line-apps.com/n/channel_devcenter/img/fx/01_1_cafe.png", "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
+          "body": { "type": "box", "layout": "vertical", "contents": [ { "type": "text", "text": "Brown Cafe", "weight": "bold", "size": "xl" }, { "type": "text", "text": "ยินดีต้อนรับสู่ร้านของเรา!", "margin": "md" } ] }
+        },
+        promotion: {
+          "type": "bubble",
+          "body": { "type": "box", "layout": "vertical", "contents": [ { "type": "text", "text": "SALE 50%", "weight": "bold", "color": "#1DB446", "size": "sm" }, { "type": "text", "text": "ลดราคากระหน่ำ", "weight": "bold", "size": "xxl", "margin": "md" }, { "type": "text", "text": "เฉพาะวันนี้วันเดียวเท่านั้น รีบเลย!", "size": "xs", "color": "#aaaaaa", "wrap": true } ] },
+          "footer": { "type": "box", "layout": "vertical", "contents": [ { "type": "button", "style": "primary", "color": "#905c44", "action": { "type": "uri", "label": "ซื้อเลย", "uri": "https://linecorp.com" } } ] }
+        },
+        receipt: {
+            "type": "bubble",
+            "body": { "type": "box", "layout": "vertical", "contents": [ { "type": "text", "text": "RECEIPT", "weight": "bold", "color": "#1DB446", "size": "sm" }, { "type": "text", "text": "Brown Store", "weight": "bold", "size": "xxl", "margin": "md" }, { "type": "separator", "margin": "xxl" }, { "type": "box", "layout": "vertical", "margin": "xxl", "spacing": "sm", "contents": [ { "type": "box", "layout": "horizontal", "contents": [ { "type": "text", "text": "Energy Drink", "size": "sm", "color": "#555555", "flex": 0 }, { "type": "text", "text": "$2.99", "size": "sm", "color": "#111111", "align": "end" } ] } ] } ] }
+        }
+    };
 
     // --- Main Logic ---
     $(document).ready(function() {
@@ -299,10 +386,19 @@
         itemTemplate = $('.template-item').first().clone();
         
         // Event Listeners
-        $('#json').on('input', function() { renderPreview(); });
-        $('#altText').on('input', function() { $('#text-count').text(`${this.value.length}/400`); });
+        $('#json').on('input', function() { 
+            renderPreview(); 
+            handleAutoSave();
+        });
+        
+        $('#altText').on('input', function() { 
+            $('#text-count').text(`${this.value.length}/400`);
+            handleAutoSave();
+        });
+        
         $('#login-btn').click(() => liff.login({ redirectUri: window.location.href }));
         $('#save-btn').click(saveFlex);
+        
         $('#share-btn').click(() => {
             const jsonStr = $('#json').val();
             const altText = $('#altText').val();
@@ -312,7 +408,38 @@
                 Swal.fire('Error', 'JSON ไม่ถูกต้อง', 'error');
             }
         });
+        
         $('#send-chat-btn').click(sendInChat);
+        
+        // New Buttons
+        $('#format-btn').click(formatJson);
+        $('#clear-json-btn').click(() => {
+            $('#json').val('');
+            renderPreview();
+            handleAutoSave();
+        });
+        
+        $('.template-select').click(function(e) {
+            e.preventDefault();
+            const type = $(this).data('type');
+            if(SAMPLE_TEMPLATES[type]) {
+                const json = SAMPLE_TEMPLATES[type];
+                $('#json').val(JSON.stringify(json, null, 2));
+                renderPreview();
+                handleAutoSave();
+            }
+        });
+
+        // Search with Pagination Support
+        $('#search-input').on('keyup', function() {
+            const value = $(this).val().toLowerCase();
+            // Filter from source data
+            filteredItems = allItems.filter(item => 
+                item.name.toLowerCase().includes(value)
+            );
+            // Reset to page 1 and render
+            renderPage(1);
+        });
     });
 
     async function main() {
@@ -332,6 +459,9 @@
           await handleSharedLink(sharedId);
           return;
         }
+        
+        // Check Draft
+        loadDraft();
 
         await loadUserProfile();
         $('#loader-sec').addClass('hide');
@@ -343,6 +473,112 @@
         console.error(err);
         Swal.fire('Error', 'เกิดข้อผิดพลาดในการโหลด LIFF: ' + err.message, 'error');
       }
+    }
+    
+    // --- Pagination Logic ---
+    function renderPage(page) {
+        currentPage = page;
+        
+        // 1. Clear current list (except template)
+        $('#flexlist').children().not('.template-item').remove();
+        
+        // 2. Check empty state
+        if (filteredItems.length === 0) {
+            $('#empty-list').removeClass('hide');
+            $('#pagination-controls').empty();
+            return;
+        }
+        $('#empty-list').addClass('hide');
+        
+        // 3. Calculate slice
+        const start = (page - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const itemsToShow = filteredItems.slice(start, end);
+        
+        // 4. Render items
+        itemsToShow.forEach(item => renderListItem(item));
+        
+        // 5. Render Pagination Controls
+        renderPaginationControls();
+    }
+
+    function renderPaginationControls() {
+        const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+        const $pagination = $('#pagination-controls');
+        $pagination.empty();
+
+        if (totalPages <= 1) return; // ไม่ต้องโชว์ถ้ามีหน้าเดียว
+
+        // Prev Button
+        const prevDisabled = currentPage === 1 ? 'disabled' : '';
+        $pagination.append(`
+            <li class="page-item ${prevDisabled}">
+                <a class="page-link" onclick="renderPage(${currentPage - 1})">ก่อนหน้า</a>
+            </li>
+        `);
+
+        // Page Numbers
+        for (let i = 1; i <= totalPages; i++) {
+            const active = i === currentPage ? 'active' : '';
+            $pagination.append(`
+                <li class="page-item ${active}">
+                    <a class="page-link" onclick="renderPage(${i})">${i}</a>
+                </li>
+            `);
+        }
+
+        // Next Button
+        const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+        $pagination.append(`
+            <li class="page-item ${nextDisabled}">
+                <a class="page-link" onclick="renderPage(${currentPage + 1})">ถัดไป</a>
+            </li>
+        `);
+    }
+
+    // --- Auto Save Logic ---
+    function handleAutoSave() {
+        clearTimeout(autoSaveTimer);
+        $('#status-text').text('กำลังพิมพ์...');
+        autoSaveTimer = setTimeout(() => {
+            const data = {
+                json: $('#json').val(),
+                altText: $('#altText').val(),
+                date: new Date().getTime()
+            };
+            localStorage.setItem('flex_draft', JSON.stringify(data));
+            $('#status-text').text('บันทึกร่างอัตโนมัติแล้ว');
+        }, 1000);
+    }
+    
+    function loadDraft() {
+        const draft = localStorage.getItem('flex_draft');
+        if(draft) {
+            try {
+                const data = JSON.parse(draft);
+                // Only load if fields are empty
+                if(!$('#json').val()) $('#json').val(data.json || '');
+                if(!$('#altText').val()) $('#altText').val(data.altText || '');
+                renderPreview();
+            } catch(e) {}
+        }
+    }
+    
+    function clearCache() {
+        localStorage.removeItem('flex_draft');
+        toast.fire('info', 'ล้างข้อมูล Draft เรียบร้อย');
+        setTimeout(() => location.reload(), 500);
+    }
+    
+    function formatJson() {
+        const val = $('#json').val();
+        if(!val) return;
+        try {
+            const obj = JSON.parse(val);
+            $('#json').val(JSON.stringify(obj, null, 2));
+        } catch(e) {
+            toast.fire('error', 'JSON ไม่ถูกต้อง จัดรูปแบบไม่ได้');
+        }
     }
 
     async function loadUserProfile() {
@@ -377,16 +613,18 @@
 
     function fetchSavedList() {
       callApi('get').done(function(res) {
-          $('#flexlist').empty(); // Clear current list
-          
           if (res.status === 200 && res.data.length > 0) {
-            $('#empty-list').addClass('hide');
+            // เก็บข้อมูลทั้งหมดลงตัวแปร state
+            allItems = res.data;
+            filteredItems = [...allItems]; // เริ่มต้นให้ข้อมูลที่กรองเท่ากับข้อมูลทั้งหมด
             
-            res.data.forEach(item => {
-               renderListItem(item);
-            });
+            // เรียกแสดงหน้าแรก
+            renderPage(1);
           } else {
+            $('#flexlist').children().not('.template-item').remove();
             $('#empty-list').removeClass('hide');
+            allItems = [];
+            filteredItems = [];
           }
       }).fail(function() {
           Swal.fire('Error', 'โหลดข้อมูลไม่สำเร็จ', 'error');
@@ -402,12 +640,9 @@
         $clone.find('.item-name').text(item.name);
         
         // --- FIX Z-INDEX ISSUE ---
-        // เพิ่ม Logic: เมื่อกดปุ่ม Dropdown ให้เพิ่ม Class high-z-index ที่ตัว Column หลัก
         $clone.find('.dropdown').on('show.bs.dropdown', function () {
-            // หา .col-md-6 ที่เป็น parent แล้วใส่ class
             $(this).closest('.col-md-6, .col-lg-4').addClass('high-z-index');
         }).on('hide.bs.dropdown', function () {
-            // เมื่อปิดเมนู ให้เอา class ออก
             $(this).closest('.col-md-6, .col-lg-4').removeClass('high-z-index');
         });
 
@@ -457,6 +692,7 @@
         $('#altText').val(item.name);
         $('#json').val(JSON.stringify(JSON.parse(item.flex), null, 4));
         renderPreview();
+        handleAutoSave();
         
         window.scrollTo({ top: 0, behavior: 'smooth' });
         
@@ -531,6 +767,12 @@
                         $domElement.remove();
                         toast.fire('success', 'ลบเรียบร้อย');
                         if(currentFlexId === id) resetEditorState();
+                        
+                        // Update arrays and pagination after deletion
+                        allItems = allItems.filter(item => item.flex_id !== id);
+                        filteredItems = filteredItems.filter(item => item.flex_id !== id);
+                        renderPage(currentPage); // Re-render current page
+                        
                     } else {
                         Swal.fire('Error', 'ลบไม่สำเร็จ', 'error');
                     }
@@ -619,6 +861,8 @@
         $('#save-btn').removeClass('btn-warning').addClass('btn-primary');
         $('#json').val('');
         $('#altText').val('');
+        // Clear draft when successfully saved/reset
+        localStorage.removeItem('flex_draft');
         renderPreview();
     }
   </script>
