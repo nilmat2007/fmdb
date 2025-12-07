@@ -14,13 +14,19 @@
   <!-- SweetAlert2 -->
   <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   
-  <!-- jQuery (สำคัญมาก ต้องโหลดก่อน flexhtml.js) -->
+  <!-- jQuery -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
   <!-- LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
-  <!-- Custom Library (ของคุณ) -->
+  <!-- FlexHTML Library (CDN) -->
+  <!-- โหลด CSS ของ Flex2HTML จาก CDN เพื่อความชัวร์ในการแสดงผล -->
+  <link href="https://cdn.jsdelivr.net/gh/mmthong/flex2html@main/css/flex2html.css" rel="stylesheet">
+  <!-- โหลด JS ของ Flex2HTML จาก CDN -->
+  <script src="https://cdn.jsdelivr.net/gh/mmthong/flex2html@main/flex2html.min.js"></script>
+  
+  <!-- Custom Library (Local Fallback) -->
   <script src="flexhtml.js"></script>
   <link rel="stylesheet" href="flexhtml.css">
 
@@ -100,18 +106,7 @@
       box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
     }
     
-    /* Reset CSS for FlexHTML */
-    .reset-this {
-        /* all: initial; <-- ลบออก เพราะทำให้ div กลายเป็น inline ซึ่งทำให้ flex พัง */
-        font-family: 'Kanit', sans-serif; 
-        font-size: 16px;
-        line-height: 1.5;
-        color: #000;
-        text-align: left;
-    }
-    .reset-this * {
-        box-sizing: border-box;
-    }
+    /* REMOVED .reset-this style that caused issues */
 
     .flex-card {
       transition: transform 0.2s;
@@ -124,7 +119,7 @@
       box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
     }
 
-    /* --- FIX: Class สำหรับยกเลเยอร์เมื่อเมนูเปิด --- */
+    /* FIX: Class สำหรับยกเลเยอร์เมื่อเมนูเปิด */
     .high-z-index {
       z-index: 1050 !important;
       position: relative;
