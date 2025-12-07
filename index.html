@@ -430,13 +430,14 @@
             }
         });
 
-        // Search with Pagination Support
-        $('#search-input').on('keyup', function() {
-            const value = $(this).val().toLowerCase();
-            // Filter from source data
-            filteredItems = allItems.filter(item => 
-                item.name.toLowerCase().includes(value)
-            );
+        // Search with Pagination Support - UPDATED LOGIC
+        $('#search-input').on('input', function() { // Change 'keyup' to 'input' for better compatibility
+            const value = $(this).val().toLowerCase().trim();
+            // Filter from source data with safety check
+            filteredItems = allItems.filter(item => {
+                const name = item.name ? item.name.toString().toLowerCase() : '';
+                return name.includes(value);
+            });
             // Reset to page 1 and render
             renderPage(1);
         });
