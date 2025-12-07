@@ -102,8 +102,12 @@
     
     /* Reset CSS for FlexHTML */
     .reset-this {
-        all: initial;
+        /* all: initial; <-- ลบออก เพราะทำให้ div กลายเป็น inline ซึ่งทำให้ flex พัง */
         font-family: 'Kanit', sans-serif; 
+        font-size: 16px;
+        line-height: 1.5;
+        color: #000;
+        text-align: left;
     }
     .reset-this * {
         box-sizing: border-box;
@@ -835,7 +839,13 @@
         }
 
         try {
-            const json = JSON.parse(jsonStr);
+            let json = JSON.parse(jsonStr);
+
+            // --- FIX: Support Full Flex Message Structure ---
+            if (json.type === 'flex' && json.contents) {
+                json = json.contents;
+            }
+
             $display.empty();
             
             if (typeof flex2html === 'function') {
