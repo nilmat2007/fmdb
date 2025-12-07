@@ -112,11 +112,21 @@
     .flex-card {
       transition: transform 0.2s;
       border-left: 5px solid var(--primary-color);
+      /* เพิ่ม position relative เพื่อให้เป็นจุดอ้างอิง */
+      position: relative;
     }
     
     .flex-card:hover {
       transform: translateY(-2px);
       box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    }
+
+    /* --- FIX: Class สำหรับยกเลเยอร์เมื่อเมนูเปิด --- */
+    .high-z-index {
+      z-index: 1050 !important;
+      position: relative;
+      /* ต้องปิด transform ชั่วคราวเพื่อให้ z-index ทำงานได้เต็มที่ในบาง browser */
+      transform: none !important; 
     }
 
     .avatar-img {
@@ -235,7 +245,8 @@
             <div class="card-body d-flex justify-content-between align-items-center">
               <div class="text-truncate me-2 w-100 fw-bold item-name">Template Name</div>
               <div class="dropdown">
-                <button class="btn btn-light btn-sm rounded-circle" data-bs-toggle="dropdown">
+                <!-- เพิ่ม ID หรือ Class เพื่อใช้อ้างอิงได้ง่ายขึ้นถ้าจำเป็น แต่ใช้โครงสร้างเดิมได้ -->
+                <button class="btn btn-light btn-sm rounded-circle" data-bs-toggle="dropdown" aria-expanded="false">
                   <i class="bi bi-three-dots-vertical"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow">
@@ -390,6 +401,16 @@
         
         $clone.find('.item-name').text(item.name);
         
+        // --- FIX Z-INDEX ISSUE ---
+        // เพิ่ม Logic: เมื่อกดปุ่ม Dropdown ให้เพิ่ม Class high-z-index ที่ตัว Column หลัก
+        $clone.find('.dropdown').on('show.bs.dropdown', function () {
+            // หา .col-md-6 ที่เป็น parent แล้วใส่ class
+            $(this).closest('.col-md-6, .col-lg-4').addClass('high-z-index');
+        }).on('hide.bs.dropdown', function () {
+            // เมื่อปิดเมนู ให้เอา class ออก
+            $(this).closest('.col-md-6, .col-lg-4').removeClass('high-z-index');
+        });
+
         // Bind Events
         $clone.find('.load-item').click(() => loadFlexToEditor(item));
         $clone.find('.share-item').click(() => shareFlex(JSON.parse(item.flex), item.name));
@@ -417,10 +438,10 @@
                     confirmButtonText: 'แชร์เลย'
                 }).then((result) => {
                     if(result.isConfirmed) {
-                         shareFlex(JSON.parse(res.flex), res.altText);
+                          shareFlex(JSON.parse(res.flex), res.altText);
                     } else {
-                         $('#input-sec').removeClass('hide');
-                         loadUserProfile();
+                          $('#input-sec').removeClass('hide');
+                          loadUserProfile();
                     }
                 });
             } else {
