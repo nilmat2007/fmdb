@@ -14,14 +14,14 @@
   <!-- SweetAlert2 -->
   <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   
-  <!-- jQuery (จำเป็นสำหรับ flexhtml.js เดิม) -->
+  <!-- jQuery (จำเป็นต้องโหลดก่อน flexhtml.js) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
   <!-- LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- Custom Library (ของคุณ) -->
-  <!-- ตรวจสอบให้แน่ใจว่าไฟล์เหล่านี้อยู่ในโฟลเดอร์เดียวกับ index.html หรือ path ถูกต้อง -->
+  <!-- ตรวจสอบว่าไฟล์ flexhtml.js และ flexhtml.css อยู่ในโฟลเดอร์เดียวกับไฟล์นี้ -->
   <script src="flexhtml.js"></script>
   <link rel="stylesheet" href="flexhtml.css">
 
@@ -91,7 +91,7 @@
     /* Main App */
     .preview-box {
       background-color: #849ebf;
-      background-image: url('https://cdn.pixabay.com/photo/2016/06/02/02/33/triangles-1430105_1280.png'); /* Placeholder BG if local file missing */
+      background-image: url('https://cdn.pixabay.com/photo/2016/06/02/02/33/triangles-1430105_1280.png'); 
       background-size: cover;
       min-height: 400px;
       max-height: 600px;
@@ -99,6 +99,15 @@
       border-radius: 10px;
       padding: 15px;
       box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+    }
+    
+    /* Reset CSS for FlexHTML */
+    .reset-this {
+        all: initial;
+        font-family: 'Kanit', sans-serif; 
+    }
+    .reset-this * {
+        box-sizing: border-box;
     }
 
     .flex-card {
@@ -117,9 +126,6 @@
       object-fit: cover;
       border: 2px solid var(--primary-color);
     }
-    
-    /* Override flexhtml style if needed */
-    /* .T1Landscape { width: 100% !important; } */
   </style>
 </head>
 
@@ -206,13 +212,12 @@
             <i class="bi bi-eye"></i> Live Preview
           </div>
           <div class="preview-box">
-             <div class="reset-this">
-               <div id="flex-show">
+             <!-- Container for FlexHTML -->
+             <div id="flex-show" style="width: 100%;">
                  <div class="text-white text-center mt-5 opacity-50">
                    <i class="bi bi-chat-square-dots display-1"></i>
                    <p class="mt-2">ตัวอย่างจะปรากฏที่นี่</p>
                  </div>
-               </div>
              </div>
           </div>
         </div>
@@ -257,12 +262,12 @@
   
   <script>
     // --- Config ---
-    const LIFF_ID = '2005615503-Ar8OBd2N'; // ใส่ LIFF ID ของคุณ
+    const LIFF_ID = '2005615503-Ar8OBd2N'; // LIFF ID เดิมของคุณ
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwDd1Nnw729Y01YuWrHVkgDU_8aKmWq15onm7sncp_IfU5SAwJmL3ccofV_UtQX5qMT/exec';
 
     // --- State ---
     let userProfile = null;
-    let currentFlexId = null; // ถ้ามีค่าแสดงว่ากำลังแก้ไขของเดิม
+    let currentFlexId = null;
     let savedList = [];
 
     // --- Utils ---
@@ -291,7 +296,6 @@
           return;
         }
 
-        // Check if opened from share link
         const params = new URLSearchParams(window.location.search);
         const sharedId = params.get('s');
 
@@ -300,12 +304,20 @@
           return;
         }
 
-        // Normal Flow
         await loadUserProfile();
         hide($('#loader-sec'));
         show($('#input-sec'));
         
-        // Load Saved List
+        // ตรวจสอบว่ามี Library flexhtml หรือไม่
+        if (typeof flex2html !== 'function') {
+            console.warn('flex2html library not found.');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Library Missing',
+                text: 'ไม่พบไฟล์ flexhtml.js กรุณาตรวจสอบว่าอัพโหลดไฟล์แล้ว หรือ path ถูกต้อง'
+            });
+        }
+
         fetchSavedList();
 
       } catch (err) {
@@ -323,7 +335,7 @@
             pictureUrl: 'https://cdn-icons-png.flaticon.com/512/847/847969.png',
             isSquare: true 
         };
-        show($('#send-chat-btn')); // Show send button in chat
+        show($('#send-chat-btn'));
       } else {
         userProfile = await liff.getProfile();
         if(liff.isInClient()) show($('#send-chat-btn'));
@@ -334,41 +346,33 @@
     }
 
     // --- API Interactions ---
+    // ปรับการส่งข้อมูลให้เหมือน $.post (x-www-form-urlencoded) เพื่อความเสถียรกับ GAS
     async function callApi(action, data = {}) {
-        const formData = new FormData();
-        formData.append('q', action);
-        formData.append('uid', userProfile.userId); // ส่ง UID ไปเช็คที่ Backend
-        formData.append('isSquare', userProfile.isSquare || false);
+        const params = new URLSearchParams();
+        params.append('q', action);
+        params.append('uid', userProfile.userId);
+        params.append('isSquare', userProfile.isSquare || false);
         
         for (const key in data) {
-            formData.append(key, data[key]);
+            params.append(key, data[key]);
         }
 
         const response = await fetch(SCRIPT_URL, {
             method: 'POST',
-            body: formData
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: params
         });
         
         return await response.json();
     }
 
     async function fetchSavedList() {
-      $('#flexlist').innerHTML = ''; // Clear but keep template in memory if needed (better to clone)
-      const template = $('.template-item'); // Get template before clearing
+      $('#flexlist').innerHTML = ''; 
+      const template = $('.template-item'); 
       
       const res = await callApi('get');
-
-      if (res.status === 403) {
-         Swal.fire({
-            icon: 'error',
-            title: 'Account Expired',
-            html: 'บัญชีของคุณหมดอายุการใช้งาน<br>กรุณาติดต่อผู้ดูแลระบบ',
-            allowOutsideClick: false,
-            showConfirmButton: false
-         });
-         hide($('#input-sec'));
-         return;
-      }
 
       if (res.status === 200 && res.data.length > 0) {
         savedList = res.data;
@@ -388,7 +392,6 @@
         
         clone.querySelector('.item-name').innerText = item.name;
         
-        // Bind Events
         clone.querySelector('.load-item').onclick = () => loadFlexToEditor(item);
         clone.querySelector('.share-item').onclick = () => shareFlex(JSON.parse(item.flex), item.name);
         clone.querySelector('.delete-item').onclick = () => deleteFlex(item.flex_id, clone);
@@ -401,22 +404,22 @@
     }
 
     async function handleSharedLink(id) {
-        // Mode: View shared flex
-        const formData = new FormData();
-        formData.append('q', 'getflex');
-        formData.append('id', id);
+        const params = new URLSearchParams();
+        params.append('q', 'getflex');
+        params.append('id', id);
 
-        const res = await fetch(SCRIPT_URL, { method: 'POST', body: formData }).then(r => r.json());
+        const res = await fetch(SCRIPT_URL, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: params 
+        }).then(r => r.json());
 
         if (res.status === 200 && res.flex) {
             hide($('#loader-sec'));
-            // Bypass UI, try to share immediately or show preview
-            // But logic says: populate fields and allow share
             $('#json').value = JSON.stringify(JSON.parse(res.flex), null, 4);
             $('#altText').value = res.altText || 'Flex Message';
             renderPreview();
             
-            // Trigger Share immediately
             Swal.fire({
                 title: 'พร้อมแชร์',
                 text: `โหลด Flex: ${res.altText} เรียบร้อย`,
@@ -426,8 +429,8 @@
                 if(result.isConfirmed) {
                      shareFlex(JSON.parse(res.flex), res.altText);
                 } else {
-                     show($('#input-sec')); // Show editor if they cancel share
-                     loadUserProfile(); // Still need profile
+                     show($('#input-sec'));
+                     loadUserProfile();
                 }
             });
 
@@ -440,14 +443,12 @@
 
     function loadFlexToEditor(item) {
         currentFlexId = item.flex_id;
-        $('#altText').value = item.name; // Use name as altText for simplicity
+        $('#altText').value = item.name;
         $('#json').value = JSON.stringify(JSON.parse(item.flex), null, 4);
         renderPreview();
         
-        // Scroll to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
         
-        // Change Save Button to Update
         $('#save-btn').innerHTML = '<i class="bi bi-pencil-square me-1"></i> อัพเดท';
         $('#save-btn').classList.replace('btn-primary', 'btn-warning');
     }
@@ -459,20 +460,18 @@
         if (!isValidJson(jsonStr)) return Swal.fire('Error', 'JSON ไม่ถูกต้อง', 'error');
 
         if (currentFlexId) {
-            // Update
              Swal.showLoading();
              const res = await callApi('update', { id: currentFlexId, flex: jsonStr, name: altText });
              Swal.close();
              if(res.status === 200) {
                  toast.fire('success', 'อัพเดทเรียบร้อย');
-                 fetchSavedList(); // Refresh list
+                 fetchSavedList();
                  resetEditorState();
              } else {
                  Swal.fire('Error', res.error, 'error');
              }
 
         } else {
-            // New Save
             const { value: name } = await Swal.fire({
                 title: 'ตั้งชื่อ Flex',
                 input: 'text',
@@ -529,7 +528,6 @@
     }
 
     async function shareFlex(flexContent, altText) {
-        // Construct Full Flex Message
         const message = {
             type: 'flex',
             altText: altText || 'Sent a Flex Message',
@@ -548,7 +546,6 @@
             }
         } catch (err) {
             console.error(err);
-            // Swal.fire('Share Failed', 'ยกเลิกการแชร์ หรือเกิดข้อผิดพลาด', 'info');
         }
     }
     
@@ -586,11 +583,10 @@
             const json = JSON.parse(jsonStr);
             display.innerHTML = '';
             
-            // Check if user has flexhtml.js library
             if (typeof flex2html === 'function') {
                 flex2html('flex-show', json);
             } else {
-                display.innerHTML = '<div class="alert alert-warning">Library flexhtml.js ไม่ถูกโหลด ไม่สามารถแสดงตัวอย่างได้<br>กรุณาตรวจสอบว่ามีไฟล์ flexhtml.js ในระบบ</div>';
+                display.innerHTML = '<div class="alert alert-warning">Library flexhtml.js ไม่ถูกโหลด</div>';
             }
         } catch (e) {
             display.innerHTML = '<div class="alert alert-danger mt-3">Invalid JSON</div>';
@@ -614,16 +610,8 @@
     }
 
     // --- Event Listeners ---
-    
-    // Auto Resize Textarea & Preview on Input
-    $('#json').addEventListener('input', function() {
-        renderPreview();
-    });
-
-    $('#altText').addEventListener('input', function() {
-        $('#text-count').innerText = `${this.value.length}/400`;
-    });
-
+    $('#json').addEventListener('input', function() { renderPreview(); });
+    $('#altText').addEventListener('input', function() { $('#text-count').innerText = `${this.value.length}/400`; });
     $('#save-btn').onclick = saveFlex;
     $('#share-btn').onclick = () => {
         const jsonStr = $('#json').value;
@@ -636,9 +624,7 @@
     };
     $('#send-chat-btn').onclick = sendInChat;
 
-    // Start
     document.addEventListener('DOMContentLoaded', main);
-
   </script>
 </body>
 </html>
