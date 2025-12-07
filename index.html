@@ -113,23 +113,13 @@
     .page-link:hover { color: #009900; }
     .page-item.active .page-link { background-color: #00B900; border-color: #00B900; color: white; }
     
-    /* Reset CSS for FlexHTML - Safe Mode */
+    /* Reset CSS for FlexHTML */
     .reset-this {
+        all: initial;
         font-family: 'Kanit', sans-serif;
-        font-size: 16px;
-        line-height: 1.5;
-        color: #000000;
-        text-align: left;
-        width: 100%;
-        display: block;
     }
     .reset-this * {
         box-sizing: border-box;
-    }
-    /* Protect Preview from Bootstrap Styles */
-    .reset-this h1, .reset-this h2, .reset-this h3, .reset-this h4, .reset-this h5, .reset-this h6, .reset-this p {
-        margin: 0;
-        padding: 0;
     }
   </style>
 </head>
@@ -471,21 +461,23 @@
     }
 
     // --- Helper for Video Fallback ---
-    function convertVideoToImage(node) {
+    function preprocessFlexForPreview(node) {
         if (!node || typeof node !== 'object') return node;
         
+        // Deep clone first to be safe, but since we call this on a clone it is fine
         if (Array.isArray(node)) {
-            return node.map(convertVideoToImage);
+            return node.map(preprocessFlexForPreview);
         }
         
         // Transform Video to Image for Preview
+        // The key is to replace the whole node with its altContent
         if (node.type === 'video' && node.altContent) {
-            return convertVideoToImage(node.altContent);
+            return preprocessFlexForPreview(node.altContent);
         }
 
         const newNode = {};
         Object.keys(node).forEach(key => {
-            newNode[key] = convertVideoToImage(node[key]);
+            newNode[key] = preprocessFlexForPreview(node[key]);
         });
         return newNode;
     }
@@ -511,23 +503,35 @@
         try {
             let json = JSON.parse(jsonStr);
 
-            // --- Normalize to Flex Message Wrapper ---
-            // Ensure wrapper exists for standard bubbles
-            if (json.type !== 'flex') {
-                json = {
+            // 1. Handle Wrapper Logic (Mimic getJSON behavior for wrapper)
+            // If it DOES NOT have "type: flex", we wrap it. 
+            // If it DOES have "type: flex", we keep it.
+            // Note: flex2html might fail if the wrapper is there, depending on implementation.
+            // BUT the user said the Restaurant JSON (which has NO wrapper) works with their original code that adds wrapper.
+            // AND the Video JSON (which HAS wrapper) failed.
+            
+            // Let's ensure we are consistent.
+            let previewJson = JSON.parse(JSON.stringify(json)); // Deep clone for preview processing
+
+            if (previewJson.type !== 'flex') {
+                previewJson = {
                     type: 'flex',
                     altText: $('#altText').val() || 'Flex Message',
-                    contents: json
+                    contents: previewJson
                 };
             }
 
-            // --- Video Fallback (on the full structure) ---
-            json = convertVideoToImage(json);
+            // 2. Preprocess Video -> Image
+            previewJson = preprocessFlexForPreview(previewJson);
 
             $display.empty();
             
             if (typeof flex2html === 'function') {
-                flex2html('flex-show', json);
+                // IMPORTANT: Some versions of flex2html expect the "contents" object, not the full wrapper.
+                // If the library fails with the wrapper, we might need to pass previewJson.contents
+                // However, based on getJSON() logic, it seems it passes the full object.
+                // Let's try passing the full object as intended.
+                flex2html('flex-show', previewJson);
             } else {
                 $display.html('<div class="alert alert-warning">Library flexhtml.js ไม่ถูกโหลด</div>');
             }
@@ -541,20 +545,17 @@
       if (!flex) return;
       
       // Fix for modal preview
-      // Standardize wrapper
-      if (flex.type !== 'flex') {
-          flex = {
-              type: 'flex',
-              altText: $('#altText').val() || 'Flex Message',
-              contents: flex
-          };
-      }
+      let previewJson = JSON.parse(JSON.stringify(flex)); // Clone
       
-      let previewFlex = convertVideoToImage(flex);
+      // Wrapper check (getJSON already wraps it if needed)
+      // So flex here is ALREADY wrapped.
+      
+      // Preprocess Video
+      previewJson = preprocessFlexForPreview(previewJson);
 
-      if (previewFlex) {
+      if (previewJson) {
         $('#flex1').html('');
-        flex2html("flex1", previewFlex);
+        flex2html("flex1", previewJson);
         $('.modal').modal('show');
       }
     })
