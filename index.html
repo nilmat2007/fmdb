@@ -112,6 +112,25 @@
     .page-link { color: #00B900; cursor: pointer; }
     .page-link:hover { color: #009900; }
     .page-item.active .page-link { background-color: #00B900; border-color: #00B900; color: white; }
+    
+    /* Reset CSS for FlexHTML - Safe Mode */
+    .reset-this {
+        font-family: 'Kanit', sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+        color: #000000;
+        text-align: left;
+        width: 100%;
+        display: block;
+    }
+    .reset-this * {
+        box-sizing: border-box;
+    }
+    /* Protect Preview from Bootstrap Styles */
+    .reset-this h1, .reset-this h2, .reset-this h3, .reset-this h4, .reset-this h5, .reset-this h6, .reset-this p {
+        margin: 0;
+        padding: 0;
+    }
   </style>
 </head>
 
@@ -414,7 +433,7 @@
             $(row).removeClass('hide listtemplate');
             $(row).attr('id', item.flex_id);
             $(row).find('.btn-head').text(item.name);
-            $(row).find('.show-json').append(`<p style="display: none">${item.flex}</p>`); // Changed show-preview to show-json for simplicity
+            $(row).find('.show-json').append(`<p style="display: none">${item.flex}</p>`); 
             $(row).find('.delete-list').attr('id', item.flex_id);
             $(row).find('.share-link').attr('data-clipboard-text', 'https://liff.line.me/' + liff.getContext().liffId + '?s=' + item.flex_id);
             
@@ -428,7 +447,7 @@
             $('#flexlist').append(row);
         });
 
-        setButtonEventListener(); // Attach events to new items
+        setButtonEventListener(); 
         renderPaginationControls();
     }
 
@@ -451,29 +470,85 @@
         $pagination.append(`<li class="page-item ${nextDisabled}"><a class="page-link" onclick="renderPage(${currentPage + 1})">ถัดไป</a></li>`);
     }
 
+    // --- Helper for Video Fallback ---
+    // ฟังก์ชันนี้จะแปลง Video ให้เป็น Image โดยใช้ altContent เพื่อให้ Preview แสดงผลได้
+    function convertVideoToImage(node) {
+        if (!node || typeof node !== 'object') return node;
+        
+        // If array, map it
+        if (Array.isArray(node)) {
+            return node.map(convertVideoToImage);
+        }
+        
+        // If it's a video node with altContent, return the altContent (processed)
+        if (node.type === 'video' && node.altContent) {
+            return convertVideoToImage(node.altContent);
+        }
+
+        // Otherwise, clone object and traverse keys
+        const newNode = {};
+        Object.keys(node).forEach(key => {
+            newNode[key] = convertVideoToImage(node[key]);
+        });
+        return newNode;
+    }
+
     // --- Inputs ---
     $('#altText').on('input', function () {
       let text = $(this).val()
       $('#text-count').text(`(${text.length}/400)`)
     })
     $('#json').on('input', function () {
-      if ($(this).val() == '') {
-        $('#flex-show').html('<div class="text-light w-100 text-center my-3">พื้นที่แสดงตัวอย่าง Flex จะปรากฏที่นี่</div>')
-        return false
-      }
-      let json = getJSON(true)
-      if (json) {
-        $('#flex-show').html('')
-        flex2html('flex-show', json)
-      } else {
-        $('#flex-show').html(`<div style="color: white; font-size: 1rem; text-align: center; padding-top: 20px">Invalid JSON</div>`)
-      }
+      renderPreview();
     })
+    
+    function renderPreview() {
+        const jsonStr = $('#json').val();
+        const $display = $('#flex-show');
+        
+        if (!jsonStr.trim()) {
+            $display.html('<div class="text-light w-100 text-center my-3">พื้นที่แสดงตัวอย่าง Flex จะปรากฏที่นี่</div>');
+            return;
+        }
+
+        try {
+            let json = JSON.parse(jsonStr);
+
+            // 1. Handle Flex Container Wrapper (ถ้ามี type: flex ให้เอาไส้ในออกมา)
+            if (json.type === 'flex' && json.contents) {
+                json = json.contents;
+            }
+
+            // 2. Preprocess for Preview (แปลง Video -> Image เพื่อให้ Preview ไม่พัง)
+            json = convertVideoToImage(json);
+
+            $display.empty();
+            
+            if (typeof flex2html === 'function') {
+                flex2html('flex-show', json);
+            } else {
+                $display.html('<div class="alert alert-warning">Library flexhtml.js ไม่ถูกโหลด</div>');
+            }
+        } catch (e) {
+            // ถ้า Error เงียบๆ ให้แสดง Invalid JSON
+            $display.html(`<div style="color: white; font-size: 1rem; text-align: center; padding-top: 20px">Invalid JSON</div>`);
+        }
+    }
+
     $('#preview').click(function () {
-      let flex = getJSON()
-      if (flex) {
+      let flex = getJSON(true) // Pass true to suppress alert inside, but handle logic here
+      if (!flex) return;
+      
+      // Fix for modal preview as well
+      let previewFlex = flex;
+      if (previewFlex.type === 'flex' && previewFlex.contents) {
+          previewFlex = previewFlex.contents;
+      }
+      previewFlex = convertVideoToImage(previewFlex);
+
+      if (previewFlex) {
         $('#flex1').html('');
-        flex2html("flex1", flex);
+        flex2html("flex1", previewFlex);
         $('.modal').modal('show');
       }
     })
@@ -531,6 +606,7 @@
     })
 
     function update(id) {
+      // Logic นี้ดึงค่าจาก textarea ใน modal ซึ่งเป็น JSON ที่ format แล้ว
       let flex
       try {
         flex = JSON.parse($('#flex1').find('textarea').val())
@@ -638,14 +714,18 @@
           $('#json').trigger('input')
         }, 200);
         $('#altText').val($(this).text())
-        $('#flex-show').html('')
+        // renderPreview will handle this now via input trigger
+        // $('#flex-show').html('')
         // flex2html('flex-show', JSON.parse(json))
       })
       
       $('.show-json').off('click').click(function () {
         $('#json-update').show()
         $('#json-copy').show()
+        // Preview logic inside Modal needs handling too? 
+        // Currently it just shows code. That is fine as per original logic.
         $('#flex1').html(`<div><textarea id="json-code" class="p-2 form-control bg-white" rows="20">${JSON.stringify(JSON.parse($(this).find('p').text()), undefined, 4)}</textarea></div>`);
+        
         $('#json-copy').off('click').click(function () { copy() })
         let showjsonbtn = $(this)
         $('#json-update').off('click').click(function () {
@@ -710,12 +790,6 @@
       })
     }
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-    xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-    crossorigin="anonymous"></script>
-  <script
-    src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
-  <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 
 </html>
