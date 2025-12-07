@@ -583,28 +583,32 @@
 
     // --- Helpers ---
     function renderPreview() {
-        const jsonStr = $('#json').val();
-        const $display = $('#flex-show');
-        
-        if (!jsonStr.trim()) {
-            $display.html('<div class="text-white text-center mt-5 opacity-50"><i class="bi bi-chat-square-dots display-1"></i><p class="mt-2">ตัวอย่างจะปรากฏที่นี่</p></div>');
-            return;
-        }
-
-        try {
-            const json = JSON.parse(jsonStr);
-            $display.empty();
-            
-            if (typeof flex2html === 'function') {
-                // flex2html usually takes ID string, not element
-                flex2html('flex-show', json);
-            } else {
-                $display.html('<div class="alert alert-warning">Library flexhtml.js ไม่ถูกโหลด</div>');
-            }
-        } catch (e) {
-            $display.html('<div class="alert alert-danger mt-3">Invalid JSON</div>');
-        }
+    const jsonStr = $('#json').val();
+    const $display = $('#flex-show');
+    if (!jsonStr.trim()) {
+        $display.html('<div class="text-white text-center mt-5 opacity-50"><i class="bi bi-chat-square-dots display-1"></i><p class="mt-2">ตัวอย่างจะปรากฏที่นี่</p></div>');
+        return;
     }
+    try {
+        let json = JSON.parse(jsonStr);
+        // เพิ่มเติม: ห่อโครงสร้างให้ flex2html รองรับ
+        if (json.type === "bubble" || json.type === "carousel") {
+            json = {
+                type: "flex",
+                altText: "Preview",
+                contents: json
+            };
+        }
+        $display.empty();
+        if (typeof flex2html === 'function') {
+            flex2html('flex-show', json);
+        } else {
+            $display.html('<div class="alert alert-warning">Library flexhtml.js ไม่ถูกโหลด</div>');
+        }
+    } catch (e) {
+        $display.html('<div class="alert alert-danger mt-3">Invalid JSON</div>');
+    }
+}
 
     function isValidJson(str) {
         try {
