@@ -14,14 +14,13 @@
   <!-- SweetAlert2 -->
   <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   
-  <!-- jQuery (จำเป็นสำหรับ flexhtml.js เดิม) -->
+  <!-- jQuery (สำคัญมาก ต้องโหลดก่อน flexhtml.js) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
   <!-- LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- Custom Library (ของคุณ) -->
-  <!-- ตรวจสอบให้แน่ใจว่าไฟล์เหล่านี้อยู่ในโฟลเดอร์เดียวกับ index.html หรือ path ถูกต้อง -->
   <script src="flexhtml.js"></script>
   <link rel="stylesheet" href="flexhtml.css">
 
@@ -91,7 +90,7 @@
     /* Main App */
     .preview-box {
       background-color: #849ebf;
-      background-image: url('https://cdn.pixabay.com/photo/2016/06/02/02/33/triangles-1430105_1280.png'); /* Placeholder BG if local file missing */
+      background-image: url('https://cdn.pixabay.com/photo/2016/06/02/02/33/triangles-1430105_1280.png'); 
       background-size: cover;
       min-height: 400px;
       max-height: 600px;
@@ -100,15 +99,34 @@
       padding: 15px;
       box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
     }
+    
+    /* Reset CSS for FlexHTML */
+    .reset-this {
+        all: initial;
+        font-family: 'Kanit', sans-serif; 
+    }
+    .reset-this * {
+        box-sizing: border-box;
+    }
 
     .flex-card {
       transition: transform 0.2s;
       border-left: 5px solid var(--primary-color);
+      /* เพิ่ม position relative เพื่อให้เป็นจุดอ้างอิง */
+      position: relative;
     }
     
     .flex-card:hover {
       transform: translateY(-2px);
       box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    }
+
+    /* --- FIX: Class สำหรับยกเลเยอร์เมื่อเมนูเปิด --- */
+    .high-z-index {
+      z-index: 1050 !important;
+      position: relative;
+      /* ต้องปิด transform ชั่วคราวเพื่อให้ z-index ทำงานได้เต็มที่ในบาง browser */
+      transform: none !important; 
     }
 
     .avatar-img {
@@ -117,9 +135,6 @@
       object-fit: cover;
       border: 2px solid var(--primary-color);
     }
-    
-    /* Override flexhtml style if needed */
-    /* .T1Landscape { width: 100% !important; } */
   </style>
 </head>
 
@@ -206,13 +221,14 @@
             <i class="bi bi-eye"></i> Live Preview
           </div>
           <div class="preview-box">
+             <!-- Container for FlexHTML -->
              <div class="reset-this">
-               <div id="flex-show">
-                 <div class="text-white text-center mt-5 opacity-50">
-                   <i class="bi bi-chat-square-dots display-1"></i>
-                   <p class="mt-2">ตัวอย่างจะปรากฏที่นี่</p>
-                 </div>
-               </div>
+                <div id="flex-show" style="width: 100%; padding: 10px;">
+                    <div class="text-white text-center mt-5 opacity-50">
+                    <i class="bi bi-chat-square-dots display-1"></i>
+                    <p class="mt-2">ตัวอย่างจะปรากฏที่นี่</p>
+                    </div>
+                </div>
              </div>
           </div>
         </div>
@@ -229,7 +245,8 @@
             <div class="card-body d-flex justify-content-between align-items-center">
               <div class="text-truncate me-2 w-100 fw-bold item-name">Template Name</div>
               <div class="dropdown">
-                <button class="btn btn-light btn-sm rounded-circle" data-bs-toggle="dropdown">
+                <!-- เพิ่ม ID หรือ Class เพื่อใช้อ้างอิงได้ง่ายขึ้นถ้าจำเป็น แต่ใช้โครงสร้างเดิมได้ -->
+                <button class="btn btn-light btn-sm rounded-circle" data-bs-toggle="dropdown" aria-expanded="false">
                   <i class="bi bi-three-dots-vertical"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow">
@@ -257,20 +274,15 @@
   
   <script>
     // --- Config ---
-    const LIFF_ID = '2005615503-Ar8OBd2N'; // ใส่ LIFF ID ของคุณ
+    const LIFF_ID = '2005615503-Ar8OBd2N'; // LIFF ID ของคุณ
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwDd1Nnw729Y01YuWrHVkgDU_8aKmWq15onm7sncp_IfU5SAwJmL3ccofV_UtQX5qMT/exec';
 
     // --- State ---
     let userProfile = null;
-    let currentFlexId = null; // ถ้ามีค่าแสดงว่ากำลังแก้ไขของเดิม
-    let savedList = [];
+    let currentFlexId = null;
+    let itemTemplate = null; // Store template
 
     // --- Utils ---
-    const $ = (selector) => document.querySelector(selector);
-    const $$ = (selector) => document.querySelectorAll(selector);
-    const show = (el) => el.classList.remove('hide');
-    const hide = (el) => el.classList.add('hide');
-
     const toast = Swal.mixin({
       toast: true,
       position: 'top-end',
@@ -280,18 +292,39 @@
     });
 
     // --- Main Logic ---
+    $(document).ready(function() {
+        main();
+        
+        // Setup Template
+        itemTemplate = $('.template-item').first().clone();
+        
+        // Event Listeners
+        $('#json').on('input', function() { renderPreview(); });
+        $('#altText').on('input', function() { $('#text-count').text(`${this.value.length}/400`); });
+        $('#login-btn').click(() => liff.login({ redirectUri: window.location.href }));
+        $('#save-btn').click(saveFlex);
+        $('#share-btn').click(() => {
+            const jsonStr = $('#json').val();
+            const altText = $('#altText').val();
+            if(isValidJson(jsonStr)) {
+                shareFlex(JSON.parse(jsonStr), altText);
+            } else {
+                Swal.fire('Error', 'JSON ไม่ถูกต้อง', 'error');
+            }
+        });
+        $('#send-chat-btn').click(sendInChat);
+    });
+
     async function main() {
       try {
         await liff.init({ liffId: LIFF_ID, withLoginOnExternalBrowser: true });
         
         if (!liff.isLoggedIn()) {
-          hide($('#loader-sec'));
-          show($('#login-sec'));
-          $('#login-btn').onclick = () => liff.login({ redirectUri: window.location.href });
+          $('#loader-sec').addClass('hide');
+          $('#login-sec').removeClass('hide');
           return;
         }
 
-        // Check if opened from share link
         const params = new URLSearchParams(window.location.search);
         const sharedId = params.get('s');
 
@@ -300,12 +333,10 @@
           return;
         }
 
-        // Normal Flow
         await loadUserProfile();
-        hide($('#loader-sec'));
-        show($('#input-sec'));
+        $('#loader-sec').addClass('hide');
+        $('#input-sec').removeClass('hide');
         
-        // Load Saved List
         fetchSavedList();
 
       } catch (err) {
@@ -323,213 +354,192 @@
             pictureUrl: 'https://cdn-icons-png.flaticon.com/512/847/847969.png',
             isSquare: true 
         };
-        show($('#send-chat-btn')); // Show send button in chat
+        $('#send-chat-btn').removeClass('hide');
       } else {
         userProfile = await liff.getProfile();
-        if(liff.isInClient()) show($('#send-chat-btn'));
+        if(liff.isInClient()) $('#send-chat-btn').removeClass('hide');
       }
 
-      $('#displayName').innerText = userProfile.displayName;
-      $('#display-img').src = userProfile.pictureUrl || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+      $('#displayName').text(userProfile.displayName);
+      $('#display-img').attr('src', userProfile.pictureUrl || 'https://cdn-icons-png.flaticon.com/512/847/847969.png');
     }
 
     // --- API Interactions ---
-    async function callApi(action, data = {}) {
-        const formData = new FormData();
-        formData.append('q', action);
-        formData.append('uid', userProfile.userId); // ส่ง UID ไปเช็คที่ Backend
-        formData.append('isSquare', userProfile.isSquare || false);
-        
-        for (const key in data) {
-            formData.append(key, data[key]);
-        }
-
-        const response = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: formData
-        });
-        
-        return await response.json();
+    function callApi(action, data = {}) {
+        const formData = {
+            q: action,
+            uid: userProfile.userId,
+            isSquare: userProfile.isSquare || false,
+            ...data
+        };
+        return $.post(SCRIPT_URL, formData);
     }
 
-    async function fetchSavedList() {
-      $('#flexlist').innerHTML = ''; // Clear but keep template in memory if needed (better to clone)
-      const template = $('.template-item'); // Get template before clearing
-      
-      const res = await callApi('get');
-
-      if (res.status === 403) {
-         Swal.fire({
-            icon: 'error',
-            title: 'Account Expired',
-            html: 'บัญชีของคุณหมดอายุการใช้งาน<br>กรุณาติดต่อผู้ดูแลระบบ',
-            allowOutsideClick: false,
-            showConfirmButton: false
-         });
-         hide($('#input-sec'));
-         return;
-      }
-
-      if (res.status === 200 && res.data.length > 0) {
-        savedList = res.data;
-        hide($('#empty-list'));
-        
-        res.data.forEach(item => {
-           renderListItem(item, template);
-        });
-      } else {
-        show($('#empty-list'));
-      }
+    function fetchSavedList() {
+      callApi('get').done(function(res) {
+          $('#flexlist').empty(); // Clear current list
+          
+          if (res.status === 200 && res.data.length > 0) {
+            $('#empty-list').addClass('hide');
+            
+            res.data.forEach(item => {
+               renderListItem(item);
+            });
+          } else {
+            $('#empty-list').removeClass('hide');
+          }
+      }).fail(function() {
+          Swal.fire('Error', 'โหลดข้อมูลไม่สำเร็จ', 'error');
+      });
     }
 
-    function renderListItem(item, templateNode) {
-        const clone = templateNode.cloneNode(true);
-        clone.classList.remove('hide', 'template-item');
+    function renderListItem(item) {
+        if (!itemTemplate) return;
         
-        clone.querySelector('.item-name').innerText = item.name;
+        let $clone = itemTemplate.clone();
+        $clone.removeClass('hide template-item');
         
+        $clone.find('.item-name').text(item.name);
+        
+        // --- FIX Z-INDEX ISSUE ---
+        // เพิ่ม Logic: เมื่อกดปุ่ม Dropdown ให้เพิ่ม Class high-z-index ที่ตัว Column หลัก
+        $clone.find('.dropdown').on('show.bs.dropdown', function () {
+            // หา .col-md-6 ที่เป็น parent แล้วใส่ class
+            $(this).closest('.col-md-6, .col-lg-4').addClass('high-z-index');
+        }).on('hide.bs.dropdown', function () {
+            // เมื่อปิดเมนู ให้เอา class ออก
+            $(this).closest('.col-md-6, .col-lg-4').removeClass('high-z-index');
+        });
+
         // Bind Events
-        clone.querySelector('.load-item').onclick = () => loadFlexToEditor(item);
-        clone.querySelector('.share-item').onclick = () => shareFlex(JSON.parse(item.flex), item.name);
-        clone.querySelector('.delete-item').onclick = () => deleteFlex(item.flex_id, clone);
-        clone.querySelector('.copy-link').onclick = () => {
+        $clone.find('.load-item').click(() => loadFlexToEditor(item));
+        $clone.find('.share-item').click(() => shareFlex(JSON.parse(item.flex), item.name));
+        $clone.find('.delete-item').click(function() { deleteFlex(item.flex_id, $clone); });
+        $clone.find('.copy-link').click(() => {
             const link = `https://liff.line.me/${LIFF_ID}?s=${item.flex_id}`;
             navigator.clipboard.writeText(link).then(() => toast.fire('success', 'คัดลอกลิ้งค์แล้ว'));
-        };
+        });
 
-        $('#flexlist').appendChild(clone);
+        $('#flexlist').append($clone);
     }
 
-    async function handleSharedLink(id) {
-        // Mode: View shared flex
-        const formData = new FormData();
-        formData.append('q', 'getflex');
-        formData.append('id', id);
-
-        const res = await fetch(SCRIPT_URL, { method: 'POST', body: formData }).then(r => r.json());
-
-        if (res.status === 200 && res.flex) {
-            hide($('#loader-sec'));
-            // Bypass UI, try to share immediately or show preview
-            // But logic says: populate fields and allow share
-            $('#json').value = JSON.stringify(JSON.parse(res.flex), null, 4);
-            $('#altText').value = res.altText || 'Flex Message';
-            renderPreview();
-            
-            // Trigger Share immediately
-            Swal.fire({
-                title: 'พร้อมแชร์',
-                text: `โหลด Flex: ${res.altText} เรียบร้อย`,
-                icon: 'success',
-                confirmButtonText: 'แชร์เลย'
-            }).then((result) => {
-                if(result.isConfirmed) {
-                     shareFlex(JSON.parse(res.flex), res.altText);
-                } else {
-                     show($('#input-sec')); // Show editor if they cancel share
-                     loadUserProfile(); // Still need profile
-                }
-            });
-
-        } else {
-            Swal.fire('Error', 'ไม่พบข้อมูล Flex หรือลิ้งค์ผิดพลาด', 'error').then(() => liff.closeWindow());
-        }
+    function handleSharedLink(id) {
+        $.post(SCRIPT_URL, { q: 'getflex', id: id }).done(function(res) {
+            if (res.status === 200 && res.flex) {
+                $('#loader-sec').addClass('hide');
+                $('#json').val(JSON.stringify(JSON.parse(res.flex), null, 4));
+                $('#altText').val(res.altText || 'Flex Message');
+                renderPreview();
+                
+                Swal.fire({
+                    title: 'พร้อมแชร์',
+                    text: `โหลด Flex: ${res.altText} เรียบร้อย`,
+                    icon: 'success',
+                    confirmButtonText: 'แชร์เลย'
+                }).then((result) => {
+                    if(result.isConfirmed) {
+                          shareFlex(JSON.parse(res.flex), res.altText);
+                    } else {
+                          $('#input-sec').removeClass('hide');
+                          loadUserProfile();
+                    }
+                });
+            } else {
+                Swal.fire('Error', 'ไม่พบข้อมูล Flex หรือลิ้งค์ผิดพลาด', 'error').then(() => liff.closeWindow());
+            }
+        });
     }
 
     // --- Actions ---
 
     function loadFlexToEditor(item) {
         currentFlexId = item.flex_id;
-        $('#altText').value = item.name; // Use name as altText for simplicity
-        $('#json').value = JSON.stringify(JSON.parse(item.flex), null, 4);
+        $('#altText').val(item.name);
+        $('#json').val(JSON.stringify(JSON.parse(item.flex), null, 4));
         renderPreview();
         
-        // Scroll to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
         
-        // Change Save Button to Update
-        $('#save-btn').innerHTML = '<i class="bi bi-pencil-square me-1"></i> อัพเดท';
-        $('#save-btn').classList.replace('btn-primary', 'btn-warning');
+        $('#save-btn').html('<i class="bi bi-pencil-square me-1"></i> อัพเดท');
+        $('#save-btn').removeClass('btn-primary').addClass('btn-warning');
     }
 
-    async function saveFlex() {
-        const jsonStr = $('#json').value;
-        const altText = $('#altText').value || 'Flex Message';
+    function saveFlex() {
+        const jsonStr = $('#json').val();
+        const altText = $('#altText').val() || 'Flex Message';
 
         if (!isValidJson(jsonStr)) return Swal.fire('Error', 'JSON ไม่ถูกต้อง', 'error');
 
         if (currentFlexId) {
-            // Update
              Swal.showLoading();
-             const res = await callApi('update', { id: currentFlexId, flex: jsonStr, name: altText });
-             Swal.close();
-             if(res.status === 200) {
-                 toast.fire('success', 'อัพเดทเรียบร้อย');
-                 fetchSavedList(); // Refresh list
-                 resetEditorState();
-             } else {
-                 Swal.fire('Error', res.error, 'error');
-             }
-
+             callApi('update', { id: currentFlexId, flex: jsonStr, name: altText }).done(function(res) {
+                 Swal.close();
+                 if(res.status === 200) {
+                     toast.fire('success', 'อัพเดทเรียบร้อย');
+                     fetchSavedList();
+                     resetEditorState();
+                 } else {
+                     Swal.fire('Error', res.error, 'error');
+                 }
+             });
         } else {
-            // New Save
-            const { value: name } = await Swal.fire({
+            Swal.fire({
                 title: 'ตั้งชื่อ Flex',
                 input: 'text',
                 inputValue: altText,
                 showCancelButton: true,
-                inputValidator: (value) => {
-                    if (!value) return 'กรุณาตั้งชื่อ!';
+                preConfirm: (name) => {
+                    if (!name) Swal.showValidationMessage('กรุณาตั้งชื่อ!');
+                    return name;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.showLoading();
+                    callApi('put', { 
+                        name: result.value, 
+                        flex: jsonStr, 
+                        liff_id: liff.id 
+                    }).done(function(res) {
+                        Swal.close();
+                        if (res.result === 'success') {
+                            toast.fire('success', 'บันทึกเรียบร้อย');
+                            fetchSavedList();
+                        } else if (res.result === 'duplicate') {
+                            Swal.fire('Warning', 'ชื่อซ้ำ! กรุณาใช้ชื่ออื่น', 'warning');
+                        } else {
+                            Swal.fire('Error', res.message, 'error');
+                        }
+                    });
                 }
             });
-
-            if (name) {
-                Swal.showLoading();
-                const res = await callApi('put', { 
-                    name: name, 
-                    flex: jsonStr, 
-                    liff_id: liff.id 
-                });
-                Swal.close();
-
-                if (res.result === 'success') {
-                    toast.fire('success', 'บันทึกเรียบร้อย');
-                    fetchSavedList();
-                } else if (res.result === 'duplicate') {
-                    Swal.fire('Warning', 'ชื่อซ้ำ! กรุณาใช้ชื่ออื่น', 'warning');
-                } else {
-                    Swal.fire('Error', res.message, 'error');
-                }
-            }
         }
     }
 
-    async function deleteFlex(id, domElement) {
-        const result = await Swal.fire({
+    function deleteFlex(id, $domElement) {
+        Swal.fire({
             title: 'ยืนยันการลบ?',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             confirmButtonText: 'ลบเลย'
-        });
-
-        if (result.isConfirmed) {
-            Swal.showLoading();
-            const res = await callApi('delete', { id: id });
-            Swal.close();
-            
-            if (res.result === 200) {
-                domElement.remove();
-                toast.fire('success', 'ลบเรียบร้อย');
-                if(currentFlexId === id) resetEditorState();
-            } else {
-                Swal.fire('Error', 'ลบไม่สำเร็จ', 'error');
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.showLoading();
+                callApi('delete', { id: id }).done(function(res) {
+                    Swal.close();
+                    if (res.result === 200) {
+                        $domElement.remove();
+                        toast.fire('success', 'ลบเรียบร้อย');
+                        if(currentFlexId === id) resetEditorState();
+                    } else {
+                        Swal.fire('Error', 'ลบไม่สำเร็จ', 'error');
+                    }
+                });
             }
-        }
+        });
     }
 
     async function shareFlex(flexContent, altText) {
-        // Construct Full Flex Message
         const message = {
             type: 'flex',
             altText: altText || 'Sent a Flex Message',
@@ -548,13 +558,12 @@
             }
         } catch (err) {
             console.error(err);
-            // Swal.fire('Share Failed', 'ยกเลิกการแชร์ หรือเกิดข้อผิดพลาด', 'info');
         }
     }
     
     async function sendInChat() {
-        const jsonStr = $('#json').value;
-        const altText = $('#altText').value || 'Flex Message';
+        const jsonStr = $('#json').val();
+        const altText = $('#altText').val() || 'Flex Message';
         
         if (!isValidJson(jsonStr)) return Swal.fire('Error', 'JSON ไม่ถูกต้อง', 'error');
         
@@ -574,26 +583,26 @@
 
     // --- Helpers ---
     function renderPreview() {
-        const jsonStr = $('#json').value;
-        const display = $('#flex-show');
+        const jsonStr = $('#json').val();
+        const $display = $('#flex-show');
         
         if (!jsonStr.trim()) {
-            display.innerHTML = '<div class="text-white text-center mt-5 opacity-50"><i class="bi bi-chat-square-dots display-1"></i><p class="mt-2">ตัวอย่างจะปรากฏที่นี่</p></div>';
+            $display.html('<div class="text-white text-center mt-5 opacity-50"><i class="bi bi-chat-square-dots display-1"></i><p class="mt-2">ตัวอย่างจะปรากฏที่นี่</p></div>');
             return;
         }
 
         try {
             const json = JSON.parse(jsonStr);
-            display.innerHTML = '';
+            $display.empty();
             
-            // Check if user has flexhtml.js library
             if (typeof flex2html === 'function') {
+                // flex2html usually takes ID string, not element
                 flex2html('flex-show', json);
             } else {
-                display.innerHTML = '<div class="alert alert-warning">Library flexhtml.js ไม่ถูกโหลด ไม่สามารถแสดงตัวอย่างได้<br>กรุณาตรวจสอบว่ามีไฟล์ flexhtml.js ในระบบ</div>';
+                $display.html('<div class="alert alert-warning">Library flexhtml.js ไม่ถูกโหลด</div>');
             }
         } catch (e) {
-            display.innerHTML = '<div class="alert alert-danger mt-3">Invalid JSON</div>';
+            $display.html('<div class="alert alert-danger mt-3">Invalid JSON</div>');
         }
     }
 
@@ -606,39 +615,12 @@
 
     function resetEditorState() {
         currentFlexId = null;
-        $('#save-btn').innerHTML = '<i class="bi bi-save me-1"></i> บันทึก';
-        $('#save-btn').classList.replace('btn-warning', 'btn-primary');
-        $('#json').value = '';
-        $('#altText').value = '';
+        $('#save-btn').html('<i class="bi bi-save me-1"></i> บันทึก');
+        $('#save-btn').removeClass('btn-warning').addClass('btn-primary');
+        $('#json').val('');
+        $('#altText').val('');
         renderPreview();
     }
-
-    // --- Event Listeners ---
-    
-    // Auto Resize Textarea & Preview on Input
-    $('#json').addEventListener('input', function() {
-        renderPreview();
-    });
-
-    $('#altText').addEventListener('input', function() {
-        $('#text-count').innerText = `${this.value.length}/400`;
-    });
-
-    $('#save-btn').onclick = saveFlex;
-    $('#share-btn').onclick = () => {
-        const jsonStr = $('#json').value;
-        const altText = $('#altText').value;
-        if(isValidJson(jsonStr)) {
-            shareFlex(JSON.parse(jsonStr), altText);
-        } else {
-            Swal.fire('Error', 'JSON ไม่ถูกต้อง', 'error');
-        }
-    };
-    $('#send-chat-btn').onclick = sendInChat;
-
-    // Start
-    document.addEventListener('DOMContentLoaded', main);
-
   </script>
 </body>
 </html>
