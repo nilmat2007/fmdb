@@ -471,21 +471,18 @@
     }
 
     // --- Helper for Video Fallback ---
-    // ฟังก์ชันนี้จะแปลง Video ให้เป็น Image โดยใช้ altContent เพื่อให้ Preview แสดงผลได้
     function convertVideoToImage(node) {
         if (!node || typeof node !== 'object') return node;
         
-        // If array, map it
         if (Array.isArray(node)) {
             return node.map(convertVideoToImage);
         }
         
-        // If it's a video node with altContent, return the altContent (processed)
+        // Transform Video to Image for Preview
         if (node.type === 'video' && node.altContent) {
             return convertVideoToImage(node.altContent);
         }
 
-        // Otherwise, clone object and traverse keys
         const newNode = {};
         Object.keys(node).forEach(key => {
             newNode[key] = convertVideoToImage(node[key]);
@@ -514,12 +511,17 @@
         try {
             let json = JSON.parse(jsonStr);
 
-            // 1. Handle Flex Container Wrapper (ถ้ามี type: flex ให้เอาไส้ในออกมา)
-            if (json.type === 'flex' && json.contents) {
-                json = json.contents;
+            // --- Normalize to Flex Message Wrapper ---
+            // Ensure wrapper exists for standard bubbles
+            if (json.type !== 'flex') {
+                json = {
+                    type: 'flex',
+                    altText: $('#altText').val() || 'Flex Message',
+                    contents: json
+                };
             }
 
-            // 2. Preprocess for Preview (แปลง Video -> Image เพื่อให้ Preview ไม่พัง)
+            // --- Video Fallback (on the full structure) ---
             json = convertVideoToImage(json);
 
             $display.empty();
@@ -530,21 +532,25 @@
                 $display.html('<div class="alert alert-warning">Library flexhtml.js ไม่ถูกโหลด</div>');
             }
         } catch (e) {
-            // ถ้า Error เงียบๆ ให้แสดง Invalid JSON
             $display.html(`<div style="color: white; font-size: 1rem; text-align: center; padding-top: 20px">Invalid JSON</div>`);
         }
     }
 
     $('#preview').click(function () {
-      let flex = getJSON(true) // Pass true to suppress alert inside, but handle logic here
+      let flex = getJSON(true) 
       if (!flex) return;
       
-      // Fix for modal preview as well
-      let previewFlex = flex;
-      if (previewFlex.type === 'flex' && previewFlex.contents) {
-          previewFlex = previewFlex.contents;
+      // Fix for modal preview
+      // Standardize wrapper
+      if (flex.type !== 'flex') {
+          flex = {
+              type: 'flex',
+              altText: $('#altText').val() || 'Flex Message',
+              contents: flex
+          };
       }
-      previewFlex = convertVideoToImage(previewFlex);
+      
+      let previewFlex = convertVideoToImage(flex);
 
       if (previewFlex) {
         $('#flex1').html('');
@@ -552,6 +558,7 @@
         $('.modal').modal('show');
       }
     })
+    
     $('#shared').click(function () {
       var flex = getJSON()
       if (flex) {
@@ -606,7 +613,6 @@
     })
 
     function update(id) {
-      // Logic นี้ดึงค่าจาก textarea ใน modal ซึ่งเป็น JSON ที่ format แล้ว
       let flex
       try {
         flex = JSON.parse($('#flex1').find('textarea').val())
@@ -628,7 +634,6 @@
         }, function (output) {
           if (output.status == 200) {
             let delbtn = $(`#${id}`)
-            // Update data locally then re-render if needed, but reloading is safer
             getFlex(); // Reload list
             $('.modal').modal('hide')
             Swal.fire({ icon: 'success', title: 'อัพเดทเรียบร้อย', showConfirmButton: false, timer: 1500 })
